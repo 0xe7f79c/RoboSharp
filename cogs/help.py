@@ -2,7 +2,7 @@ from discord.app_commands import AppCommandError
 from discord.ext import commands
 
 from core.bot import RSharp
-from core.context import RContext
+from core.core import GuildContext
 
 
 async def setup(bot: RSharp) -> None:
@@ -36,5 +36,5 @@ class Help(commands.Cog):
         name='help',
         guild_only=678655372197625858,
     )
-    async def help(self, ctx: RContext, *, name: str = 'help'):
-        pass
+    async def help(self, ctx: GuildContext, *, name: str = 'help'):
+        await ctx.send('[dbg] todo')
