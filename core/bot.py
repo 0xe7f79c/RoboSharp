@@ -4,7 +4,7 @@ import discord
 from discord import Client, Intents
 from discord.ext import commands
 
-from core import core
+from core import context
 
 MAY_USER_ID = 882316761268113418
 
@@ -19,6 +19,6 @@ class RSharp(commands.Bot):
         origin: Union[discord.Message, discord.Interaction[Client]],
         /,
         *,
-        cls: type[commands.Context[Any]] = core.RContext,
-    ) -> core.RContext:
-        return await super().get_context(origin, cls=core.RContext)
+        cls: type[commands.Context[Any]] = context.RContext,
+    ) -> context.RContext:
+        return await super().get_context(origin, cls=context.RContext)

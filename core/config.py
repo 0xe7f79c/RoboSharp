@@ -11,7 +11,7 @@ class ResolvedConfig(TypedDict):
 
 
 class ConfigReader:
-    def __init__(self, name: str = 'Config.json') -> None:
+    def __init__(self, name: str) -> None:
         self.path = Path(name)
         if not self.path.exists():
             raise FileNotFoundError(

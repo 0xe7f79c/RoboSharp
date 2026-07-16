@@ -2,7 +2,7 @@ from discord.app_commands import AppCommandError
 from discord.ext import commands
 
 from core.bot import RSharp
-from core.core import GuildContext
+from core.context import GuildContext
 
 
 async def setup(bot: RSharp) -> None:
