@@ -1,11 +1,15 @@
-from typing import Any, Union
+from typing import Any, TypeVar, Union
 
 import discord
 from discord import Client, Intents
+from discord.app_commands import AppCommandError
 from discord.ext import commands
+
 from cogs.util.context import RContext
 
 MAY_USER_ID = 882316761268113418
+
+HybridError = TypeVar('HybridError', ValueError, AppCommandError)
 
 
 class RSharp(commands.Bot):

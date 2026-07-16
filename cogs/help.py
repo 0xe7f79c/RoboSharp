@@ -1,9 +1,8 @@
+from discord.app_commands import AppCommandError
 from discord.ext import commands
 
-from cogs.util.context import RContext
-
 from cogs.bot import RSharp
-from discord.app_commands import AppCommandError
+from cogs.util.context import RContext
 
 
 async def setup(bot: RSharp) -> None:
@@ -11,17 +10,12 @@ async def setup(bot: RSharp) -> None:
 
 
 class HelpError(ValueError, AppCommandError):
-    """A hybrid help module error.
-
-    Args:
-        ValueError (ValueError): Fulfills the class relationship to satisfy the text command errors.
-        AppCommandError (_type_): Fulfills the class relationship to satisfy the slash command errors.
-    """
+    """An adapter class that satisifies both hybrid and text exceptions."""
 
     pass
 
 
-UNKNOWN_EMOJI = "\N{BLACK QUESTION MARK ORNAMENT}"
+UNKNOWN_EMOJI = '\N{BLACK QUESTION MARK ORNAMENT}'
 
 
 class Help(commands.Cog):
@@ -36,11 +30,11 @@ class Help(commands.Cog):
         if isinstance(error, Exception):
             error = error.original
             if isinstance(error, HelpError):
-                await ctx.send("{}{}".format(UNKNOWN_EMOJI, str(error)))
+                await ctx.send('{}{}'.format(UNKNOWN_EMOJI, str(error)))
 
     @commands.hybrid_command(
-        name="help",
+        name='help',
         guild_only=678655372197625858,
     )
-    async def help(self, ctx: RContext):
-        raise HelpError("Unknown command/module. (Did you type it right?)")
+    async def help(self, ctx: RContext, *, name: str = 'help'):
+        pass

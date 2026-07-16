@@ -1,6 +1,6 @@
-from typing import TypedDict
-from pathlib import Path
 import json
+from pathlib import Path
+from typing import TypedDict
 
 
 class ResolvedConfig(TypedDict):
@@ -11,15 +11,15 @@ class ResolvedConfig(TypedDict):
 
 
 class ConfigReader:
-    def __init__(self, name: str = "Config.json") -> None:
+    def __init__(self, name: str = 'Config.json') -> None:
         self.path = Path(name)
         if not self.path.exists():
             raise FileNotFoundError(
-                "The config file: {} could not be found.".format(name)
+                'The config file: {} could not be found.'.format(name)
             )
         elif self.path.is_dir():
             raise FileNotFoundError(
-                "The config path cannot be a directory. (provided: {})".format(name)
+                'The config path cannot be a directory. (provided: {})'.format(name)
             )
 
     def read(self) -> ResolvedConfig:
@@ -30,10 +30,10 @@ class ConfigReader:
             deserialized_file = json.loads(contents)
             config = deserialized_file
 
-        prefix = config["prefix"]
-        token = config["token"]
-        pg_dsn = config["pg_dsn"]
-        remove_default_help = bool(config["remove_default_help"])
+        prefix = config['prefix']
+        token = config['token']
+        pg_dsn = config['pg_dsn']
+        remove_default_help = bool(config['remove_default_help'])
 
         config_obj = ResolvedConfig(
             prefix=prefix,
@@ -41,18 +41,19 @@ class ConfigReader:
             pg_dsn=pg_dsn,
             remove_default_help=remove_default_help,
         )
+
         return config_obj
 
 
 class Config:
-    def __init__(self, name: str = "Config.json") -> None:
+    def __init__(self, name: str = 'Config.json') -> None:
         self.reader = ConfigReader(name)
         self.config_dict = self.reader.read()
 
-        self._prefix = self.config_dict["prefix"]
-        self._token = self.config_dict["token"]
-        self._pg_dsn = self.config_dict["pg_dsn"]
-        self._remove_default_help = self.config_dict["remove_default_help"]
+        self._prefix = self.config_dict['prefix']
+        self._token = self.config_dict['token']
+        self._pg_dsn = self.config_dict['pg_dsn']
+        self._remove_default_help = self.config_dict['remove_default_help']
 
     @property
     def prefix(self):
