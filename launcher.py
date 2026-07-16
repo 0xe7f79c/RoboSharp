@@ -1,8 +1,7 @@
 import asyncio
 
-from util.config import Config
-
 from core.bot import RSharp
+from core.config import Config
 
 VANITY = r"""
  
