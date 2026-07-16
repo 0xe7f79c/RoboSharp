@@ -1,20 +1,27 @@
-from typing import KeysView, Mapping
-
-from discord import Color, Embed
 from discord.ext import commands
 
 from cogs.util.context import RContext
 
 from cogs.bot import RSharp
-from cogs.util.pages import Paginator
+from discord.app_commands import AppCommandError
 
 
 async def setup(bot: RSharp) -> None:
     await bot.add_cog(Help(bot=bot))
 
 
-class HelpError(ValueError):
+class HelpError(ValueError, AppCommandError):
+    """A hybrid help module error.
+
+    Args:
+        ValueError (ValueError): Fulfills the class relationship to satisfy the text command errors.
+        AppCommandError (_type_): Fulfills the class relationship to satisfy the slash command errors.
+    """
+
     pass
+
+
+UNKNOWN_EMOJI = "\N{BLACK QUESTION MARK ORNAMENT}"
 
 
 class Help(commands.Cog):
@@ -25,31 +32,15 @@ class Help(commands.Cog):
     def __init__(self, bot: RSharp) -> None:
         self.bot = bot
 
-    def default_menu(self, cogs: Mapping[str, commands.Cog]) -> Embed:
-        msg = ""
-        embed = Embed(color=Color.greyple(), title="Showing list of categories")
-        cog_names: KeysView[str] = cogs.keys()
+    async def cog_command_error(self, ctx, error):
+        if isinstance(error, Exception):
+            error = error.original
+            if isinstance(error, HelpError):
+                await ctx.send("{}{}".format(UNKNOWN_EMOJI, str(error)))
 
-        for name in cog_names:
-            module = cogs[name]
-            module_name: str = module.qualified_name
-
-            app_command_count: int = len(module.get_app_commands())
-            text_command_count: int = len(module.get_commands())
-            command_sum = app_command_count + text_command_count
-
-            plural_label = "command" if command_sum == 1 else "commands"
-
-            module_desc = module.description
-
-            msg = "└─`{} {}...`".format(command_sum, plural_label)
-            embed.add_field(name="*{}*".format(module_name), value=msg, inline=True)
-
-        return embed
-
-    @commands.command()
+    @commands.hybrid_command(
+        name="help",
+        guild_only=678655372197625858,
+    )
     async def help(self, ctx: RContext):
-        cogs = self.bot.cogs
-        menu = self.default_menu(cogs=cogs)
-        view = Paginator(document="iwuoiaeghsiuerghiruseherheisurrg")
-        await ctx.send(embed=menu, view=view)
+        raise HelpError("Unknown command/module. (Did you type it right?)")

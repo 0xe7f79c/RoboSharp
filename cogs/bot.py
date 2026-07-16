@@ -1,7 +1,7 @@
-from typing import Any, Optional, Union, Type, Unpack, override
+from typing import Any, Union
 
 import discord
-from discord import Client, Intents, Interaction, User
+from discord import Client, Intents
 from discord.ext import commands
 from cogs.util.context import RContext
 
@@ -21,6 +21,3 @@ class RSharp(commands.Bot):
         cls: type[commands.Context[Any]] = RContext,
     ) -> RContext:
         return await super().get_context(origin, cls=RContext)
-
-    async def send_pickable(self):
-        pass
