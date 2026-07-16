@@ -1,8 +1,8 @@
 from discord.app_commands import AppCommandError
 from discord.ext import commands
-from util.context import RContext
 
 from core.bot import RSharp
+from core.context import RContext
 
 
 async def setup(bot: RSharp) -> None:

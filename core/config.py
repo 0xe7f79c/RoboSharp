@@ -25,10 +25,10 @@ class ConfigReader:
     def read(self) -> ResolvedConfig:
         config: dict[str, str] = {}
         file_name: str = self.path.name
+
         with open(file_name) as file:
             contents = file.read()
-            deserialized_file = json.loads(contents)
-            config = deserialized_file
+            config = json.loads(contents)
 
         prefix = config['prefix']
         token = config['token']
@@ -41,7 +41,6 @@ class ConfigReader:
             pg_dsn=pg_dsn,
             remove_default_help=remove_default_help,
         )
-
         return config_obj
 
 

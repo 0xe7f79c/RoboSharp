@@ -3,7 +3,8 @@ from typing import Any, Union
 import discord
 from discord import Client, Intents
 from discord.ext import commands
-from util.context import RContext
+
+from core.context import RContext
 
 MAY_USER_ID = 882316761268113418
 
