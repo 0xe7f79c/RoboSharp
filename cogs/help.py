@@ -12,14 +12,12 @@ async def setup(bot: core.RSharp) -> None:
 class HelpError(ValueError, AppCommandError):
     """An adapter class that satisifies both hybrid and text exceptions."""
 
-    pass
-
 
 class Help(core.Cog, pictograph='\N{BLACK QUESTION MARK ORNAMENT}'):
     """
     Hello, welcome to the help menu! To navigate this bot, you can use either
     the command prefix, or its slash-command counterpart!
-    """  # noqa: E501
+    """
 
     def __init__(self, bot: core.RSharp) -> None:
         self.bot = bot
@@ -30,16 +28,20 @@ class Help(core.Cog, pictograph='\N{BLACK QUESTION MARK ORNAMENT}'):
         if isinstance(error, Exception):
             error = error.original
             if isinstance(error, HelpError):
-                await ctx.send('{}{}'.format(self.pictograph, str(error)))
+                await ctx.send(f'{self.pictograph}{error!s}')
 
-    @commands.hybrid_command(
-        name='help',
-        guild_only=678655372197625858,
-    )
-    async def help(self, ctx: core.GuildContext, *, name: str = 'Help') -> None:
+    @commands.hybrid_group()
+    async def help(self, ctx: core.GuildContext, name: str) -> None:
         """Displays a menu of available commands"""
+        await ctx.defer()
+
         cog: core.Cog = self.bot.get_cog(name)
         if cog is None:
-            raise HelpError('Unknown module: {}'.format(name))
+            raise HelpError(f'Unknown module: {name}')
 
-        await ctx.send(cog.description)
+        await ctx.reply(cog.description)
+
+    @help.command(aliases=['source'])
+    async def src(self, ctx: core.GuildContext) -> None:
+        link = core.SRC_LINK
+        await ctx.reply(link, ephemeral=True)

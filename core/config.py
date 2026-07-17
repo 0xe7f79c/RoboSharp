@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import TypedDict
 
-__all__ = ('ResolvedConfig', 'Config')
+__all__ = ('Config', 'ResolvedConfig')
 
 
 class ResolvedConfig(TypedDict):
@@ -16,19 +16,16 @@ class ConfigReader:
     def __init__(self, name: str) -> None:
         self.path = Path(name)
         if not self.path.exists():
+            raise FileNotFoundError(f'The config file: {name} could not be found.')
+        if self.path.is_dir():
             raise FileNotFoundError(
-                'The config file: {} could not be found.'.format(name)
-            )
-        elif self.path.is_dir():
-            raise FileNotFoundError(
-                'The config path cannot be a directory. (provided: {})'.format(name)
+                f'The config path cannot be a directory. (provided: {name})'
             )
 
     def read(self) -> ResolvedConfig:
         config: dict[str, str] = {}
         file_name: str = self.path.name
-
-        with open(file_name) as file:
+        with Path.open(file_name) as file:
             contents = file.read()
             config = json.loads(contents)
 
@@ -37,13 +34,12 @@ class ConfigReader:
         pg_dsn = config['pg_dsn']
         remove_default_help = bool(config['remove_default_help'])
 
-        config_obj = ResolvedConfig(
+        return ResolvedConfig(
             prefix=prefix,
             token=token,
             pg_dsn=pg_dsn,
             remove_default_help=remove_default_help,
         )
-        return config_obj
 
 
 class Config:

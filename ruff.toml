@@ -1,6 +1,17 @@
+target-version="py39"
+
 [format]
 quote-style = "single"
 indent-style = "space"
 
 [lint]
-select = ["E", "F", "ANN"]
+select = [
+    "ANN", # idk wtf this even does bru
+    
+    "E", "F", "UP", "B", "SIM", "I", "FA102",
+    "A", "C4", "PIE", "PT", "PTH", "RET", "RSE", "RUF"
+]
+
+ignore = [
+    "UP007", "ANN002", "ANN003", "ANN101", "ANN102",
+]

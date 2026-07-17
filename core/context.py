@@ -4,7 +4,7 @@ import asyncpg
 from discord import Guild
 from discord.ext import commands
 
-__all__ = ('RContext', 'GuildContext')
+__all__ = ('GuildContext', 'RContext')
 
 
 class RContext(commands.Context):
