@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 
 import core
 
@@ -40,9 +41,8 @@ class Launcher:
                     f'Default {self.prefix}help command removed. You may need to register your own.'
                 )
 
-            await self.bot.load_extension('cogs.help')
-            await self.bot.load_extension('cogs.admin')
-
+            cog_path: Path = Path('cogs')
+            await self.bot.load_extensions(cog_path)
             await bot.start(token=self.token)
 
 

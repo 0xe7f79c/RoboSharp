@@ -1,4 +1,5 @@
 from logging import Logger
+from pathlib import Path
 from typing import Any, Union
 
 import discord
@@ -44,3 +45,27 @@ class RSharp(commands.Bot):
         content: str = str(exception)
         clazz: type = type(exception)
         self.logger.info(f'{clazz.__name__}: {content}')
+
+    async def load_extensions(self, path: Path) -> None:
+        if not path.is_dir:
+            self.logger.warn(
+                f'{path.name} is not a directory, Cogs will not be loaded.'
+            )
+            return
+
+        for file in path.iterdir():
+            cog_name: str = file.name
+            if cog_name == '__pycache__':
+                continue
+
+            # remove .py
+            cog_name: str = cog_name.removesuffix('.py')
+
+            self.logger.info(f'Registering: {cog_name}')
+            cog_path: str = f'cogs.{cog_name}'
+            try:
+                await self.load_extension(cog_path)
+                self.logger.info(f'Loaded: {cog_name}')
+            except Exception as ex:
+                ex_str: str = str(ex)
+                self.logger.error(f'Ignoring cog: {cog_name} due to error: {ex_str}')
