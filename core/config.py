@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from typing import TypedDict
 
+__all__ = ('ResolvedConfig', 'Config')
+
 
 class ResolvedConfig(TypedDict):
     prefix: str
@@ -49,23 +51,23 @@ class Config:
         self.reader = ConfigReader(name)
         self.config_dict = self.reader.read()
 
-        self._prefix = self.config_dict['prefix']
-        self._token = self.config_dict['token']
-        self._pg_dsn = self.config_dict['pg_dsn']
-        self._remove_default_help = self.config_dict['remove_default_help']
+        self._prefix: str = self.config_dict['prefix']
+        self._token: str = self.config_dict['token']
+        self._pg_dsn: str = self.config_dict['pg_dsn']
+        self._remove_default_help: bool = self.config_dict['remove_default_help']
 
     @property
-    def prefix(self):
+    def prefix(self) -> str:
         return self._prefix
 
     @property
-    def token(self):
+    def token(self) -> str:
         return self._token
 
     @property
-    def pg_dsn(self):
+    def pg_dsn(self) -> str:
         return self._pg_dsn
 
     @property
-    def remove_default_help(self):
+    def remove_default_help(self) -> bool:
         return self._remove_default_help

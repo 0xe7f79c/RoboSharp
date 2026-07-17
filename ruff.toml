@@ -1,3 +1,6 @@
 [format]
 quote-style = "single"
 indent-style = "space"
+
+[lint]
+select = ["E", "F", "ANN"]

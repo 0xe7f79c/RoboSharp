@@ -1,7 +1,6 @@
 import asyncio
 
-from core.bot import RSharp
-from core.config import Config
+import core
 
 VANITY = r"""
  
@@ -20,13 +19,13 @@ VANITY = r"""
 
 class Launcher:
     def __init__(self) -> None:
-        config = Config()
+        config = core.Config()
         self.token = config.token
         self.prefix = config.prefix
         self.pg_dsn = config.pg_dsn
         self.remove_old_help = config.remove_default_help
 
-        self.bot = RSharp(self.prefix)
+        self.bot = core.RSharp(self.prefix)
 
     async def run(self) -> None:
         print(VANITY)
@@ -35,6 +34,7 @@ class Launcher:
                 bot.remove_command('help')
 
             await self.bot.load_extension('cogs.help')
+            await self.bot.load_extension('cogs.admin')
             await bot.start(token=self.token)
 
 
