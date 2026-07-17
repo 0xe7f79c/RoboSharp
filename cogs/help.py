@@ -30,8 +30,8 @@ class Help(core.Cog, pictograph='\N{BLACK QUESTION MARK ORNAMENT}'):
             if isinstance(error, HelpError):
                 await ctx.send(f'{self.pictograph}{error!s}')
 
-    @commands.hybrid_group()
-    async def help(self, ctx: core.GuildContext, name: str) -> None:
+    @commands.hybrid_group(name='help')
+    async def _help(self, ctx: core.GuildContext, name: str) -> None:
         """Displays a menu of available commands"""
         await ctx.defer()
 
@@ -41,7 +41,7 @@ class Help(core.Cog, pictograph='\N{BLACK QUESTION MARK ORNAMENT}'):
 
         await ctx.reply(cog.description)
 
-    @help.command(aliases=['source'])
+    @_help.command(aliases=['source'])
     async def src(self, ctx: core.GuildContext) -> None:
         link = core.SRC_LINK
         await ctx.reply(link, ephemeral=True)

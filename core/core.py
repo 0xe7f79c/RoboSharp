@@ -1,5 +1,3 @@
-from logging import Logger
-
 from discord.ext import commands
 
 __all__ = ('SRC_LINK', 'UNKNOWN_EMOJI', 'Cog')
@@ -9,7 +7,7 @@ UNKNOWN_EMOJI = '\N{BLACK QUESTION MARK ORNAMENT}'
 SRC_LINK = 'https://github.com/ps11n1/RoboSharp'
 
 
-class Cog(commands.Cog, Logger):
+class Cog(commands.Cog):
     pictograph: str
 
     def __init_subclass__(
