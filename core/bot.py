@@ -2,6 +2,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Any, Union
 
+import asyncpg
 import discord
 from discord import Client, Intents, Message
 from discord.ext import commands
@@ -15,6 +16,7 @@ MAY_USER_ID = 882316761268113418
 class RSharp(commands.Bot):
     log_handler: LogHandler
     logger: Logger
+    pool: asyncpg.Pool
 
     def __init__(self, prefix: str) -> None:
         intents = Intents.all()
