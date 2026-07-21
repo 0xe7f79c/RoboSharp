@@ -65,11 +65,11 @@ class Gems(commands.Cog):
         if isinstance(error, Exception):
             error = error.original
             if isinstance(error, GemError):
-                await ctx.send(str(error))
+                await ctx.reply(str(error))
 
     async def get_gemboard(self, guild_id: int) -> GuildGemboard:
         async with self.pool.acquire() as conn:
-            query: str = """SELECT * FROM gemboards WHERE guildid = $1"""
+            query = """SELECT * FROM gemboards WHERE guildid = $1"""
             record: asyncpg.Record = conn.fetchrow(query, guild_id)
             return GuildGemboard(self.bot, record)
 
