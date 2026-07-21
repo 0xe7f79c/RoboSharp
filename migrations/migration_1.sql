@@ -49,6 +49,12 @@ CREATE TABLE IF NOT EXISTS gem_entry (
 	bot_message_id		BIGINT DEFAULT NULL,
 	guild_id			BIGINT
 );
+CREATE TABLE IF NOT EXISTS gemboard (
+	guild_id			BIGINT PRIMARY KEY,
+	channel_id			BIGINT,
+	threshold			BIGINT,
+	locked				BOOLEAN
+);
 --- **************
 
 --- **************

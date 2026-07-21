@@ -1,5 +1,5 @@
 from logging import Logger
-from typing import Any, Union
+from typing import Any, Type, Union
 
 import asyncpg
 import discord
@@ -24,7 +24,7 @@ class RSharp(commands.Bot):
         origin: Union[discord.Message, discord.Interaction[Client]],
         /,
         *,
-        cls: type[commands.Context[Any]] = RContext,
+        cls: Type[commands.Context[Any]] = RContext,
     ) -> RContext:
         return await super().get_context(origin, cls=RContext)
 

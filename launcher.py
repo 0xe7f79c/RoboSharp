@@ -17,7 +17,7 @@ VANITY = r"""
                                     |_|    
 """
 
-extensions = ['cogs.stars']
+extensions = ['cogs.gems']
 
 
 class Launcher:
@@ -34,7 +34,7 @@ class Launcher:
         bot.pool = await asyncpg.create_pool(self.pg_dsn)
 
     async def run(self) -> None:
-        async with self.bot as bot, LogHandler(log_type='discord.http') as logger:
+        async with self.bot as bot, LogHandler(log_type='discord') as logger:
             bot.log_handler = logger
             bot.logger = bot.log_handler.logger
 
