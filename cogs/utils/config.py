@@ -2,8 +2,6 @@ import json
 from pathlib import Path
 from typing import TypedDict
 
-__all__ = ('Config', 'ResolvedConfig')
-
 
 class ResolvedConfig(TypedDict):
     prefix: str
@@ -18,9 +16,7 @@ class ConfigReader:
         if not self.path.exists():
             raise FileNotFoundError(f'The config file: {name} could not be found.')
         if self.path.is_dir():
-            raise FileNotFoundError(
-                f'The config path cannot be a directory. (provided: {name})'
-            )
+            raise FileNotFoundError(f'The config path cannot be a directory. (provided: {name})')
 
     def read(self) -> ResolvedConfig:
         config: dict[str, str] = {}

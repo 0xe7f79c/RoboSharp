@@ -1,10 +1,7 @@
 import logging
 from typing import Self
 
-__all__ = 'LogHandler'
-
-
-LOG_FORMAT_TEMPLATE = '\033[33m%(asctime)s\033[0m - \033[36m%(levelname)s\033[0m: \033[37m%(message)s\033[0m'  # noqa: E501
+LOG_FORMAT_TEMPLATE = '\033[33m%(asctime)s\033[0m - \033[36m%(levelname)s\033[0m: \033[37m%(message)s\033[0m'
 
 
 class LogHandler:

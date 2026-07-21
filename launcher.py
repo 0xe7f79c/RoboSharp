@@ -1,7 +1,10 @@
 import asyncio
-from pathlib import Path
 
-import core
+import asyncpg
+
+from bot import RSharp
+from cogs.utils.config import Config
+from cogs.utils.logging import LogHandler
 
 VANITY = r"""
   _____       _____ _                      
@@ -14,19 +17,24 @@ VANITY = r"""
                                     |_|    
 """
 
+extensions = ['cogs.stars']
+
 
 class Launcher:
     def __init__(self) -> None:
-        config = core.Config()
+        config = Config()
         self.token = config.token
         self.prefix = config.prefix
         self.pg_dsn = config.pg_dsn
         self.remove_old_help = config.remove_default_help
 
-        self.bot = core.RSharp(self.prefix)
+        self.bot = RSharp(self.prefix)
+
+    async def setup_pool(self, bot: RSharp) -> None:
+        bot.pool = await asyncpg.create_pool(self.pg_dsn)
 
     async def run(self) -> None:
-        async with self.bot as bot, core.LogHandler(log_type='discord.http') as logger:
+        async with self.bot as bot, LogHandler(log_type='discord.http') as logger:
             bot.log_handler = logger
             bot.logger = bot.log_handler.logger
 
@@ -37,12 +45,12 @@ class Launcher:
             if self.remove_old_help:
                 bot.logger.info('Uninstalling default help...')
                 bot.remove_command('help')
-                bot.logger.warning(
-                    f'Default {self.prefix}help command removed. You may need to register your own.'
-                )
+                bot.logger.warning(f'Default {self.prefix}help command removed. You may need to register your own.')
 
-            cog_path: Path = Path('cogs')
-            await self.bot.load_extensions(cog_path)
+            await self.setup_pool(bot)
+
+            for cog in extensions:
+                await self.bot.load_extension(cog)
             await bot.start(token=self.token)
 
 

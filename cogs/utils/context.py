@@ -4,8 +4,6 @@ import asyncpg
 from discord import Guild
 from discord.ext import commands
 
-__all__ = ('GuildContext', 'RContext')
-
 
 class RContext(commands.Context):
     def __init__(self, **kwargs: dict[str, Any]) -> None:
