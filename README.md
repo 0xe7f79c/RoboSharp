@@ -16,11 +16,8 @@ The user will then require permissions to read/write/delete entries via `migrati
 The recommended permissions are:
 
 ```sql
-ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO robosharp;
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA public 
-GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO robosharp;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO robosharp;
+GRANT USAGE, SELECT, UPDATE ON ALL SEQUENCES IN SCHEMA public TO robosharp;
 ```
 
 ### Connection string (Dsn)
