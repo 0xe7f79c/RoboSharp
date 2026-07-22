@@ -9,8 +9,6 @@ indent-style = "space"
 
 [lint]
 select = [
-    "ANN",
-    
     "E", "F", "UP", "B", "SIM", "I", "FA102",
     "A", "C4", "PIE", "PT", "PTH", "RET", "RSE", "RUF"
 ]

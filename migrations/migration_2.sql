@@ -1,1 +1,3 @@
-ALTER TABLE gemboard ALTER COLUMN locked SET DEFAULT false;
+ALTER TABLE gemboard
+ALTER COLUMN locked
+SET DEFAULT false;
