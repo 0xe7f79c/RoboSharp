@@ -5,9 +5,9 @@ import discord
 from discord.app_commands import AppCommandError
 from discord.ext import commands
 
-if TYPE_CHECKING:
-    from utils.context import GuildContext
+from cogs.utils.context import GuildContext
 
+if TYPE_CHECKING:
     from ..bot import RSharp
 
 
