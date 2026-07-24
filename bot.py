@@ -9,6 +9,8 @@ from discord.ext import commands
 from cogs.utils.context import GuildContext, RContext
 from cogs.utils.logging import LogHandler
 
+DEBUG = True
+
 
 class RSharp(commands.Bot):
     log_handler: LogHandler
@@ -18,6 +20,14 @@ class RSharp(commands.Bot):
     def __init__(self, prefix: str) -> None:
         intents = Intents.all()
         super().__init__(command_prefix=prefix, intents=intents)
+
+    async def setup_hook(self):
+        print('on_ready called')
+        if DEBUG:
+            guild = discord.Object(id=678655372197625858)
+            self.tree.copy_global_to(guild=guild)
+            synced = await self.tree.sync(guild=guild)
+            print(synced)
 
     async def get_context(
         self,

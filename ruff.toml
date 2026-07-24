@@ -1,5 +1,5 @@
 target-version="py38"
-line-length = 125
+line-length = 130
 
 preview = true
 
@@ -9,7 +9,7 @@ indent-style = "space"
 
 [lint]
 select = [
-    "E", "F", "UP", "B", "SIM", "I", "FA102",
+    "E", "F", "UP", "B", "I", "FA102",
     "A", "C4", "PIE", "PT", "PTH", "RET", "RSE", "RUF"
 ]
 

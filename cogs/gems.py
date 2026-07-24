@@ -1,67 +1,56 @@
-from typing import TYPE_CHECKING, Optional, Union
+import asyncio
+import uuid
+from typing import TYPE_CHECKING, Optional
 
 import asyncpg
 import discord
 from discord.app_commands import AppCommandError
-from discord.channel import TextChannel, VocalGuildChannel
 from discord.ext import commands
 
-from cogs.admin import Admin
 from cogs.utils.context import GuildContext
 
 if TYPE_CHECKING:
     from ..bot import RSharp
 
-GemChannel = Union[TextChannel, VocalGuildChannel]
+
+class GemfulGuild:
+    def __init__(self, bot: RSharp, guild_id: int, record: asyncpg.Record):
+        self.bot = bot
+        self.guild_id = guild_id
+        if record is not None:
+            self.channel_id: int = record['ChannelId']
+            self.threshold: int = record['Threshold']
+            self.locked: bool = record['Locked']
+            self.sku: uuid.UUID = record['SKU']
+            self.created_on = record['CreatedOn']
+            self.track_previous: bool = record['TrackPrevious']
+        else:
+            self.channel_id = None
+
+    @property
+    def channel(self) -> Optional[discord.TextChannel]:
+        channel: discord.TextChannel = self.bot.get_channel(self.channel_id)
+        return channel
+
+
+class GemContext(GuildContext):
+    gemboard: GemfulGuild
 
 
 class GemError(ValueError, AppCommandError):
     pass
 
 
-class GuildGemboard:
-    def __init__(self, bot: RSharp, record: asyncpg.Record) -> None:
-        self.bot = bot
-        if record is not None:
-            self.guild_id: int = record['guild_id']
-            self.channel_id: int = record['channel_id']
-            self.requirement: int = record['threshold']
-            self.locked: bool = record['locked']
-            self._channel = self.bot.get_channel(self.channel_id)
-        else:
-            raise GemError('\N{BLACK QUESTION MARK ORNAMENT} This server does not have a starboard.')
-
-    @property
-    def channel(self) -> GemChannel:
-        return self._channel
-
-    def get_guild(self) -> discord.Guild:
-        guild: discord.Guild = self.bot.get_guild(self.guild_id)
-        return guild
-
-
-class GemContext(GuildContext):
-    gemboard: GuildGemboard
-
-
-def requires_gemboard():
+def require_gemboard():
     async def wrapper(ctx: GemContext) -> bool:
-        guild = ctx.guild
-        if guild is None:
-            await ctx.send('\N{NO ENTRY} You cannot run this command in DMs.')
+        if ctx.guild is None:
             return False
-        bot: RSharp = ctx.bot
-        gem_cog: Gems = bot.get_cog('Gems')
+        guild_id: int = ctx.guild.id
+        gem_cog: Gems = ctx.bot.get_cog('Gems')
 
-        gemboard: GuildGemboard = await gem_cog.get_gemboard(guild.id)
-        if gemboard is None:
-            await ctx.send('\N{NO ENTRY SIGN} This server does not have a Gemboard.')
-            return False
-
-        # it might be deleted
+        gemboard = await gem_cog.get_gemboard(guild_id)
         if gemboard.channel is None:
-            await ctx.send('\N{NO ENTRY SIGN} This server does not have a Gemboard. (Perhaps it was deleted?)')
-            return False
+            raise GemError('This server does not have a Gemboard.')
 
         ctx.gemboard = gemboard
         return True
@@ -70,101 +59,167 @@ def requires_gemboard():
 
 
 class Gems(commands.Cog):
-    """A feature to upvote posts."""
-
-    def __init__(self, bot: RSharp) -> None:
+    def __init__(self, bot: RSharp):
         self.bot = bot
-        self.pool: asyncpg.Pool = bot.pool
+        self.pool = bot.pool
 
-    async def cog_command_error(self, ctx: GemContext, error):
-        if isinstance(error, Exception):
+    async def cog_command_error(self, ctx, error):
+        if isinstance(error, commands.HybridCommandError):
             error = error.original
-            if isinstance(error, GemError):
-                await ctx.send(str(error))
+        if isinstance(error, GemError):
+            await ctx.send(str(error))
 
-    async def get_gemboard(self, guild_id: int) -> Optional[GuildGemboard]:
-        async with self.pool.acquire() as conn:
-            query = """SELECT * FROM gemboard WHERE guild_id = $1"""
-            record: asyncpg.Record = await conn.fetchrow(query, guild_id)
-            if record is None:
-                return None
+    async def get_gemboard(self, guild_id: int) -> Optional[GemfulGuild]:
+        async with self.pool.acquire() as connection:
+            query = """
+            SELECT
+                SKU as "SKU", 
+                ChannelId as "ChannelId",
+                Locked as "Locked",
+                TrackPrevious as "TrackPrevious",
+                Threshold as "Threshold",
+                CreatedOn as "CreatedOn"
+            FROM Gems WHERE GuildId = $1"""
+            row: asyncpg.Record = await connection.fetchrow(query, guild_id)
+            config = GemfulGuild(bot=self.bot, guild_id=guild_id, record=row)
+            return config
 
-            gemboard: GuildGemboard = GuildGemboard(self.bot, record)
-            return gemboard
+    async def toggle_gem_lock(self, guild_id: int, gemboard: GemfulGuild) -> bool:
+        lock = True
 
-    async def _wipe_gemboard(self, guild_id: int) -> None:
-        async with self.pool.acquire() as conn:
-            query = """DELETE FROM gemboard WHERE guild_id = $1"""
-            await conn.execute(query, guild_id)
+        if gemboard.channel is None:
+            raise GemError('\N{NO ENTRY SIGN} The Gemboard for this server does not exist.')
+        if gemboard.locked:
+            lock = False
 
-    async def _create_gemboard(self, guild_id: int, channel_id: int, threshold: int) -> None:
-        async with self.pool.acquire() as conn:
-            query = """INSERT INTO gemboard (guild_id, channel_id, threshold)
-                       VALUES($1, $2, $3)"""
-            await conn.execute(query, guild_id, channel_id, threshold)
+        async with self.pool.acquire() as connection:
+            query = """UPDATE Gems
+                       SET Locked=$1
+                       WHERE GuildId=$2
+            """
 
-    @commands.hybrid_group()
-    async def gems(self, ctx: GuildContext, name: str = 'gemboard', *, threshold: int = 3) -> None:
-        """Creates a new gemboard, and replenishes one if it was deleted."""
-        guild = ctx.guild
-        gemboard = await self.get_gemboard(guild.id)
-        if gemboard is not None:
-            # check if the channel itself exists
-            channel = gemboard.channel
-            if channel is not None:
-                await ctx.send(f'Apparently, you already have a Gemboard set up: {channel.mention}...')
+            await connection.execute(query, lock, guild_id)
+            gemboard.locked = lock
+
+    async def create_server_gemboard(self, guild_id: int, channel_id: int, threshold: int) -> GemfulGuild:
+        pass
+
+    @commands.hybrid_group(guild=discord.Object(id=678655372197625858), fallback='create')
+    @commands.has_permissions(manage_guild=True)
+    async def gems(self, ctx: GuildContext, category: discord.CategoryChannel, channel_name: str):
+        """Creates a Gemboard for the server if one doesnt exist.
+        Args:
+            channel_name (str): The name of the Gemboard channel.
+            category (str, optional): The Category to place the channel under.
+        """
+        await ctx.defer()
+        gemboard = await self.get_gemboard(ctx.guild.id)
+        if hasattr(gemboard, 'locked'):
+            if gemboard.channel is not None:
+                await ctx.send(f'Apparently, you already have a Gemboard: {gemboard.channel.mention}')
                 return
-
-            confirm = await ctx.prompt(
-                'Apparently, you already had a Gemboard set up but it was deleted. Would you like to start over? [y/n]'
+            view_result = await ctx.confirm(
+                'It appears that the original Gemboard (#no-access) was deleted/hidden. Would you like to start over?'
             )
-            if confirm:
-                await self._wipe_gemboard(guild.id)
-            else:
-                await ctx.send('An unknown issue occured.')
-                return
+            if view_result is None:
+                raise GemError('\N{WHITE QUESTION MARK ORNAMENT} Timed out. You took too long.', ephemeral=True)
+            if view_result is False:
+                raise GemError('Aborted Gemboard creation.')
+            connection = self.bot.pool
+            query = """DELETE FROM Gems WHERE GuildID = $1"""
+            await connection.execute(query, ctx.guild.id)
         try:
-            # find the default role to target the overwrite towards
-            admin_cog: Admin = self.bot.get_cog('Admin')
-            default_role = await admin_cog.get_default_role(guild.id)
-            if default_role is None:
-                # no custom default role set for the guild
-                default_role = guild.default_role
+            default_role = await ctx.default_role()
 
             overwrites = {
-                ctx.me: discord.PermissionOverwrite(manage_messages=True, send_messages=True, view_channel=True),
+                ctx.me: discord.PermissionOverwrite(
+                    view_channel=True, manage_messages=True, send_messages=True, read_messages=True, pin_messages=True
+                ),
                 default_role: discord.PermissionOverwrite(
-                    view_channel=True,
-                    send_messages=False,
-                    read_messages=True,
-                    add_reactions=True,
+                    view_channel=True, manage_messages=False, send_messages=False, pin_messages=False
                 ),
             }
 
-            user_id = ctx.author.id
             username = ctx.author.name
-            channel = await guild.create_text_channel(
-                name=name,
-                reason=f'\N{GEM STONE} Gemboard created by: {username} (User ID: {user_id})',
-                overwrites=overwrites,
-            )
-            await ctx.send(f'Gemboard created: {channel.mention}')
-            await self._create_gemboard(guild_id=guild.id, channel_id=channel.id, threshold=threshold)
+            user_id = ctx.author.id
+            try:
+                channel = await ctx.guild.create_text_channel(
+                    channel_name,
+                    reason=f'Gemboard created by {username}. (ID: {user_id})',
+                    overwrites=overwrites,
+                    category=category,
+                )
+                try:
+                    query = """INSERT INTO Gems (GuildId, ChannelId) VALUES ($1, $2)"""
+                    await self.pool.execute(query, ctx.guild.id, channel.id)
+                    await ctx.reply(f'\N{GEM STONE} Gemboard created: {channel.mention}')
+                except Exception:
+                    await ctx.send('The channel could not be created due to an internal issue.', ephemeral=True)
+                    await channel.delete()
+                    return
+            except discord.Forbidden:
+                await ctx.send('\N{NO ENTRY SIGN} Could not create channel due to low permissions.', ephemeral=True)
+                return
         except discord.Forbidden:
-            await ctx.send('\N{NO ENTRY SIGN} Aborted Gemboard creation: I cannot access this channel.')
-            return
-        except discord.NotFound:
             await ctx.send(
-                '\N{NO ENTRY} Aborted Gemboard creation:'
-                + ' Something went wrong when accessing the Gemboard channel. (Perhaps it was deleted mid-way?)'
+                '\N{NO ENTRY SIGN} Could not change permissions due to me having low permissions myself.`', ephemeral=True
             )
             return
         except GemError:
             return
-        except Exception:
-            await ctx.send('Something went wrong.')
+        except asyncio.TimeoutError:
+            await ctx.send('You took too long. Aborting...', ephemeral=True)
             return
+        except Exception as ex:
+            print(ex)
+            await ctx.send('\N{WHITE QUESTION MARK ORNAMENT} An unknown error occured.')
+
+    @gems.command()
+    @require_gemboard()
+    async def lock(self, ctx: GemContext) -> None:
+        """
+        Toggles the servers Gemboard lock, which effects \N{GEM STONE} reactions.
+        """
+        await ctx.defer()
+        gemboard = ctx.gemboard
+        await self.toggle_gem_lock(ctx.guild.id, gemboard)
+        channel = gemboard.channel
+
+        if gemboard.locked:
+            await ctx.reply(f"\N{LOCK} {channel.mention} is locked and will **no longer** recieve newly made \N{GEM STONE}'s.")
+        else:
+            await ctx.reply(f"\N{OPEN LOCK} {channel.mention} is now unlocked and **will** recieve newly made \N{GEM STONE}'s.")
+
+    @gems.group(name='threshold', fallback='view')
+    @require_gemboard()
+    async def _threshold(self, ctx: GemContext):
+        """Commands to change how many \N{GEM STONE}'s a message will need."""
+        await ctx.defer()
+        threshold = ctx.gemboard.threshold
+        await ctx.reply(f"A message currently requires: {threshold} `\N{GEM STONE}`'s before it can be posted in the Gemboard.")
+
+    @_threshold.command()
+    @require_gemboard()
+    async def change(self, ctx: GemContext, threshold: int = 3):
+        """
+        Changes the requirement to post on the servers Gemboard.
+
+        Parameters
+        ----------
+        threshold: int
+            The new threshold requirement to post on the Gemboard.
+        """
+        await ctx.defer()
+        if threshold <= 0:
+            raise GemError('\N{CROSS MARK} Threshold must be greater than zero.')
+        gemboard = ctx.gemboard
+        async with self.pool.acquire() as connection:
+            query = """UPDATE Gems SET Threshold = $1 WHERE GuildId = $2"""
+            await connection.execute(query, threshold, ctx.guild.id)
+
+        gemboard.threshold = threshold
+        await ctx.reply(f'\N{WHITE HEAVY CHECK MARK} Changed Gemboard threshold to: `{threshold}`.')
 
 
-async def setup(bot: RSharp) -> None:
+async def setup(bot: RSharp):
     await bot.add_cog(Gems(bot=bot))
