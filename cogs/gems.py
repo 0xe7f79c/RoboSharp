@@ -142,27 +142,25 @@ class Gems(commands.Cog):
 
             username = ctx.author.name
             user_id = ctx.author.id
+
+            channel = await ctx.guild.create_text_channel(
+                channel_name,
+                reason=f'Gemboard created by {username}. (ID: {user_id})',
+                overwrites=overwrites,
+                category=category,
+            )
             try:
-                channel = await ctx.guild.create_text_channel(
-                    channel_name,
-                    reason=f'Gemboard created by {username}. (ID: {user_id})',
-                    overwrites=overwrites,
-                    category=category,
-                )
-                try:
-                    query = """INSERT INTO Gems (GuildId, ChannelId) VALUES ($1, $2)"""
-                    await self.pool.execute(query, ctx.guild.id, channel.id)
-                    await ctx.reply(f'\N{GEM STONE} Gemboard created: {channel.mention}')
-                except Exception:
-                    await ctx.send('The channel could not be created due to an internal issue.', ephemeral=True)
-                    await channel.delete()
-                    return
-            except discord.Forbidden:
-                await ctx.send('\N{NO ENTRY SIGN} Could not create channel due to low permissions.', ephemeral=True)
+                query = """INSERT INTO Gems (GuildId, ChannelId) VALUES ($1, $2)"""
+                await self.pool.execute(query, ctx.guild.id, channel.id)
+                await ctx.reply(f'\N{GEM STONE} Gemboard created: {channel.mention}')
+            except Exception:
+                await ctx.send('The channel could not be created due to an internal issue.', ephemeral=True)
+                await channel.delete()
                 return
         except discord.Forbidden:
             await ctx.send(
-                '\N{NO ENTRY SIGN} Could not change permissions due to me having low permissions myself.`', ephemeral=True
+                '\N{NO ENTRY SIGN} Could not create channel due to low permissions. (Required: `Manage Channels`, and `Manage Roles`)',
+                ephemeral=True,
             )
             return
         except GemError:
