@@ -1,3 +1,6 @@
+-- Date: 7/27/26
+-- Reason: Re-import of the old java schema
+
 CREATE TABLE IF NOT EXISTS
 	Gems (
 		SKU UUID DEFAULT gen_random_uuid () PRIMARY KEY,
@@ -27,6 +30,7 @@ CREATE TABLE IF NOT EXISTS
 	GemContributor (
 		SKU UUID DEFAULT gen_random_uuid () PRIMARY KEY,
 		UserId BIGINT NOT NULL,
+		MessageID BIGINT NOT NULL,
 		CreatedOn TIMESTAMP DEFAULT NOW()
 	);
 
@@ -39,6 +43,10 @@ CREATE INDEX IF NOT EXISTS idx_gem_entry_message_author_id ON GemEntry (MessageA
 CREATE INDEX IF NOT EXISTS idx_gem_entry_message_id ON GemEntry (MessageId);
 
 CREATE INDEX IF NOT EXISTS idx_gem_entry_guild_id ON GemEntry (GuildID);
+
+CREATE INDEX IF NOT EXISTS idx_gem_contributor_user_id ON GemEntry (UserId);
+
+CREATE INDEX IF NOT EXISTS idx_gem_contributor_message_id ON GemEntry (MessageId);
 
 CREATE TABLE IF NOT EXISTS
 	GuildHackban (

@@ -31,7 +31,7 @@ class Admin(commands.Cog):
     async def get_default_role(self, guild_id: int) -> Optional[discord.Role]:
         """Returns the Guilds default role."""
         async with self.pool.acquire() as conn:
-            query = """SELECT RoleId FROM DefaultRole WHERE GuildId = $1"""
+            query = """SELECT RoleId FROM GuildDefaultRole WHERE GuildId = $1"""
             record: asyncpg.Record = await conn.fetchrow(query, guild_id)
 
             if record is None:

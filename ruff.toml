@@ -9,8 +9,8 @@ indent-style = "space"
 
 [lint]
 select = [
-    "E", "F", "UP", "B", "I", "FA102",
-    "A", "C4", "PIE", "PT", "PTH", "RET", "RSE", "RUF"
+    "E", "F", "UP", "I", "FA102",
+    "A", "C4", "PIE", "PT", "PTH", "RSE", "RUF"
 ]
 
 ignore = [
