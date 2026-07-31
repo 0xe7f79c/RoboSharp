@@ -1,3 +1,4 @@
+import asyncio
 from typing import Dict, Optional, Tuple
 
 import asyncpg
@@ -15,8 +16,7 @@ class ValidStarChannel(discord.TextChannel):
 
 
 MAX_FIELD_LEN = 120
-
-COLOR_PHASES = ['#685902', '#9d8602', '#c8ab02', '#f2cf01']
+ALLOWED_MIMES = ['image/jpeg', 'image/webp', 'image/png', 'image/gif']
 
 
 class GuildStarboard:
@@ -115,9 +115,8 @@ class Starboard(commands.Cog):
         elif stars > r_max:
             stars = r_max
 
-        max_b = 90
+        max_b = 255
         min_b = 0  # highest brightness
-
         blue = max_b - (max_b - min_b) * (stars - r_min) / (r_max - r_min)
         red = 255
         green = 255
@@ -181,17 +180,21 @@ class Starboard(commands.Cog):
         author_icon = message.author.avatar
         embed.set_author(name=author_name, icon_url=author_icon.url)
 
+        content = message.clean_content
+        if len(content) > MAX_FIELD_LEN:
+            content = f'{content[0:MAX_FIELD_LEN]}'
+            content += f'[...]({message.jump_url})'
+
         has_original_attachments = False
         original_attachments = message.attachments
         if len(original_attachments) > 0:
             attachment = original_attachments[0]
-            embed.set_image(url=attachment.url)
+            if attachment.content_type in ALLOWED_MIMES:
+                embed.set_image(url=attachment.url)
+            else:
+                embed.add_field(name='File', value=f'[View file]({attachment.url})', inline=False)
             has_original_attachments = True
 
-        content = message.clean_content
-        if len(content) > MAX_FIELD_LEN:
-            content = f'{content[0:MAX_FIELD_LEN]}'
-            content += f'[See more...]({message.jump_url})'
         embed.add_field(name='Message', value=content)
 
         has_reply_content = True if message.reference is not None else False
@@ -199,19 +202,12 @@ class Starboard(commands.Cog):
             resolved = message.reference.resolved
             who = resolved.author
             name = who.name
-            content = resolved.clean_content
-            attachments = resolved.attachments
 
+            content = resolved.clean_content
             if len(content) > MAX_FIELD_LEN:
                 content = content[0:MAX_FIELD_LEN]
-                content += f'[See more...]({resolved.jump_url})'
+                content += f'[...]({resolved.jump_url})'
 
-            if len(attachments) > 0:
-                attachment = attachments[0]
-                if has_original_attachments:
-                    content = f'[Attachment]({attachment.url})'
-                else:
-                    embed.set_image(url=attachment.url)
             embed.add_field(name=f'Replying to {name}', value=f'> {content}', inline=False)
 
         button = discord.ui.Button(style=discord.ButtonStyle.green, label='Jump to original message', url=message.jump_url)
@@ -220,7 +216,7 @@ class Starboard(commands.Cog):
 
         return (heading, embed, view)
 
-    async def add_star(self, payload: discord.RawReactionActionEvent):
+    async def add_star(self, payload: discord.RawReactionActionEvent) -> None:
         if str(payload.emoji) != '\N{WHITE MEDIUM STAR}':
             return
 
@@ -304,15 +300,15 @@ class Starboard(commands.Cog):
 
             bot_message = await starboard_channel.send(content=heading, embed=embed, view=view)
             content_id = bot_message.id
-            query = """UPDATE StarEntry SET bot_message_id = $1"""
-            await conn.execute(query, content_id)
+            query = """UPDATE StarEntry SET bot_message_id=$1 WHERE message_id=$2"""
+            await conn.execute(query, content_id, message.id)
 
-    async def remove_star(self, payload: discord.RawReactionActionEvent):
+    async def remove_star(self, payload: discord.RawReactionActionEvent) -> None:
         if str(payload.emoji) != '\N{WHITE MEDIUM STAR}':
             return
 
     @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         # add to cache first
         chan = await self.bot.fetch_channel(payload.channel_id)
         msg = await chan.fetch_message(payload.message_id)
@@ -320,8 +316,11 @@ class Starboard(commands.Cog):
         self.message_cache[payload.message_id] = msg
         await self.add_star(payload)
 
+        await asyncio.sleep(5)
+        await msg.add_reaction('\N{WHITE MEDIUM STAR}')
+
     @commands.Cog.listener()
-    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
+    async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent) -> None:
         starboard = await self.get_starboard(payload.guild_id)
         if starboard.channel is None:
             return
@@ -401,10 +400,9 @@ class Starboard(commands.Cog):
             )
 
             try:
-                query = """
-                INSERT INTO Starboards (guild_id, channel_id) VALUES (
-                    $1,
-                    $2
+                query = """INSERT INTO Starboards (guild_id, channel_id) VALUES (
+                        $1,
+                        $2
                 )"""
                 await self.pool.execute(query, guild_id, starboard_channel.id)
                 await ctx.reply(f'\N{DIZZY SYMBOL} Starboard creation successful: {starboard_channel.mention}')
@@ -420,17 +418,17 @@ class Starboard(commands.Cog):
             await ctx.reply('An unknown error occured.')
             return
 
-    @starboard.group(name='req')
+    @starboard.group()
     @starboard_only()
-    async def requirement(self, ctx: StarContext) -> None:
+    async def threshold(self, ctx: StarContext) -> None:
         """Shows many \N{WHITE MEDIUM STAR}'s a message needs."""
         await ctx.defer()
         starboard = ctx.starboard
         await ctx.reply(f'Current requirement: {starboard.post_requirement}')
 
-    @requirement.command()
+    @threshold.command()
     @starboard_only()
-    async def update(self, ctx: StarContext, count: int):
+    async def update(self, ctx: StarContext, count: int) -> None:
         """Changes how many \N{WHITE MEDIUM STAR}'s a message needs.
 
         Args:
