@@ -1,4 +1,3 @@
-import asyncio
 from typing import Dict, Optional, Tuple
 
 import asyncpg
@@ -320,9 +319,6 @@ class Starboard(commands.Cog):
 
         self.message_cache[payload.message_id] = msg
         await self.add_star(payload)
-
-        await asyncio.sleep(5)
-        await msg.add_reaction('\N{WHITE MEDIUM STAR}')
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent):
