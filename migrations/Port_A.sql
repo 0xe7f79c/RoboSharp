@@ -33,7 +33,11 @@ CREATE TABLE IF NOT EXISTS Starer (
 	CONSTRAINT fk_starer_entry
 /**/			FOREIGN KEY (message_id)
 /**/			REFERENCES StarEntry(message_id)
-/**/			ON DELETE CASCADE
+/**/			ON DELETE CASCADE,
+
+				FOREIGN KEY (guild_id)
+				REFERENCES Starboards(guild_id)
+				ON DELETE CASCADE
 
 );
 

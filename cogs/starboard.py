@@ -102,9 +102,9 @@ class Starboard(commands.Cog):
         elif 3 <= stars < 6:
             return '\N{GLOWING STAR}'
         elif 6 <= stars < 9:
-            return '\N{SPARKLES}'
+            return '\N{DIZZY SYMBOL}'
 
-        return '\N{DIZZY SYMBOL}'
+        return '\N{SPARKLES}'
 
     def get_color_brightness(self, stars: int) -> discord.Color:
         r_min = 0
@@ -185,7 +185,6 @@ class Starboard(commands.Cog):
             content = f'{content[0:MAX_FIELD_LEN]}'
             content += f'[...]({message.jump_url})'
 
-        has_original_attachments = False
         original_attachments = message.attachments
         if len(original_attachments) > 0:
             attachment = original_attachments[0]
@@ -193,7 +192,6 @@ class Starboard(commands.Cog):
                 embed.set_image(url=attachment.url)
             else:
                 embed.add_field(name='File', value=f'[View file]({attachment.url})', inline=False)
-            has_original_attachments = True
 
         embed.add_field(name='Message', value=content)
 
