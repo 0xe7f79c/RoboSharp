@@ -72,7 +72,7 @@ class Starboard(commands.Cog):
     def __init__(self, bot: RSharp) -> None:
         self.bot = bot
         self.pool = bot.pool
-
+        # message id -> message
         self.message_cache: Dict[int, discord.Message] = {}
         self.clear_message_cache_loop.start()
 
@@ -82,7 +82,7 @@ class Starboard(commands.Cog):
         if isinstance(error, StarboardError):
             await ctx.send(str(error))
 
-    @tasks.loop(hours=1, count=None)
+    @tasks.loop(minutes=25, count=None)
     async def clear_message_cache_loop(self) -> None:
         self.message_cache.clear()
 
@@ -152,8 +152,7 @@ class Starboard(commands.Cog):
 
             channel = await self.bot.fetch_channel(channel_id)
             message = await channel.fetch_message(message_id)
-
-            self.message_cache[message_id] = message
+            self.message_cache.update({message_id: message})
             return message
         except discord.NotFound:
             return None
@@ -253,7 +252,7 @@ class Starboard(commands.Cog):
         if stars < starboard.post_requirement:
             return
 
-        async with self.pool.acquire(timeout=100) as conn:
+        async with self.pool.acquire(timeout=50) as conn:
             big_ahh_query = """
                 WITH inserted AS (
                         INSERT INTO StarEntry (message_id, guild_id, author_id)
@@ -311,7 +310,7 @@ class Starboard(commands.Cog):
         chan = await self.bot.fetch_channel(payload.channel_id)
         msg = await chan.fetch_message(payload.message_id)
 
-        self.message_cache[payload.message_id] = msg
+        self.message_cache.update({payload.message_id: msg})
         await self.add_star(payload)
 
         await asyncio.sleep(5)
@@ -323,15 +322,15 @@ class Starboard(commands.Cog):
         if starboard.channel is None:
             return
 
-        query = """SELECT message_id, bot_message_id FROM StarEntry WHERE guild_id=$1"""
-        record = await self.pool.fetchrow(query, payload.guild_id)
+        query = """SELECT bot_message_id FROM StarEntry WHERE message_id=$1"""
+        record = await self.pool.fetchrow(query, payload.message_id)
 
         if record is None:
             return
 
-        bot_message_id = record[1]
+        bot_message_id = record[0]
 
-        async with self.pool.acquire(timeout=200) as conn:
+        async with self.pool.acquire(timeout=50) as conn:
             conn: asyncpg.Connection
             query = """DELETE FROM StarEntry WHERE message_id=$1"""
             await conn.execute(query, payload.message_id)
@@ -416,31 +415,47 @@ class Starboard(commands.Cog):
             await ctx.reply('An unknown error occured.')
             return
 
-    @starboard.group()
+    @starboard.group(name='threshold', fallback='view')
     @starboard_only()
-    async def threshold(self, ctx: StarContext) -> None:
+    async def _threshold(self, ctx: StarContext) -> None:
         """Shows many \N{WHITE MEDIUM STAR}'s a message needs."""
         await ctx.defer()
         starboard = ctx.starboard
-        await ctx.reply(f'Current requirement: {starboard.post_requirement}')
+        await ctx.reply(f"A message needs: {starboard.post_requirement} \N{WHITE MEDIUM STAR}'s to become a Starboard post.")
 
-    @threshold.command()
+    @starboard.command()
     @starboard_only()
-    async def update(self, ctx: StarContext, count: int) -> None:
-        """Changes how many \N{WHITE MEDIUM STAR}'s a message needs.
-
-        Args:
-            count (int): The number of \N{WHITE MEDIUM STAR}'s a message needs.
+    async def lock(self, ctx: StarContext) -> None:
+        """
+        Locks the Starboard.
         """
         await ctx.defer()
         starboard = ctx.starboard
-        if count <= 0:
-            raise StarboardError('❓ Threshold must be greater than 0.')
 
-        query = """UPDATE Starboards SET post_requirement = $1 WHERE guild_id = $2"""
-        await self.pool.execute(query, count, ctx.guild.id)
-        starboard.post_requirement = count
-        await ctx.reply(f'Star requirement set to: {count}')
+        if starboard.locked:
+            raise StarboardError('\N{WHITE QUESTION MARK ORNAMENT} Starboard is already locked.')
+
+        query = """UPDATE Starboards SET locked=$1 WHERE guild_id=$2"""
+        await self.pool.execute(query, True, ctx.guild.id)
+        starboard.locked = True
+        await ctx.reply('Starboard locked.')
+
+    @starboard.command()
+    @starboard_only()
+    async def unlock(self, ctx: StarContext) -> None:
+        """
+        Unlocks the Starboard.
+        """
+        await ctx.defer()
+        starboard = ctx.starboard
+
+        if not starboard.locked:
+            raise StarboardError('\N{WHITE QUESTION MARK ORNAMENT} The starboard is already unlocked.')
+
+        query = """UPDATE Starboards SET locked=$1 WHERE guild_id=$2"""
+        await self.pool.execute(query, False, ctx.guild.id)
+        starboard.locked = False
+        await ctx.reply('Starboard unlocked.')
 
 
 async def setup(bot: RSharp) -> None:
