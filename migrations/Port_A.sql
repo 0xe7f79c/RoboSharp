@@ -53,8 +53,8 @@ CREATE TABLE IF NOT EXISTS
 CREATE INDEX IF NOT EXISTS idx_guild_hackban_pair ON GuildHackban (GuildId, UserId);
 
 CREATE TABLE IF NOT EXISTS GuildDefaultRole (
-	GuildId BIGINT NOT NULL,
-	RoleId BIGINT NOT NULL
+	guild_id BIGINT PRIMARY KEY,
+	role_id BIGINT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_default_role_pair ON GuildDefaultRole (GuildId, RoleId);

@@ -12,14 +12,14 @@ if TYPE_CHECKING:
 
 
 class ConfirmationEmbed(discord.Embed):
-    def __init__(self, text: str = '', *, title=None, type: str = 'poll_result', url=None, timestamp=None):
+    def __init__(self, text: str = '', *, title=None, type: str = 'poll_result', url=None, timestamp=None) -> None:
         super().__init__(
             color=discord.Color.og_blurple(), title='Confirm', type=type, url=url, description=text, timestamp=timestamp
         )
 
 
 class ConfirmView(discord.ui.View):
-    def __init__(self, author_id: int, timeout: float = 20.0):
+    def __init__(self, author_id: int, timeout: float = 20.0) -> None:
         super().__init__(timeout=timeout)
         self.value: Optional[bool] = None
         self.author_id = author_id

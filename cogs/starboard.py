@@ -1,5 +1,4 @@
-import asyncio
-from typing import Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 import asyncpg
 import discord
@@ -7,8 +6,10 @@ from discord.app_commands import AppCommandError
 from discord.ext import commands, tasks
 from discord.ext.commands._types import Check
 
-from bot import RSharp
 from cogs.utils.context import GuildContext
+
+if TYPE_CHECKING:
+    from ..bot import RSharp
 
 
 class ValidStarChannel(discord.TextChannel):
@@ -207,7 +208,11 @@ class Starboard(commands.Cog):
 
             embed.add_field(name=f'Replying to {name}', value=f'> {content}', inline=False)
 
-        button = discord.ui.Button(style=discord.ButtonStyle.green, label='Jump to original message', url=message.jump_url)
+        button = discord.ui.Button(
+            style=discord.ButtonStyle.green,
+            label='Jump to original message',
+            url=message.jump_url,
+        )
         view = discord.ui.View(timeout=None)
         view.add_item(button)
 
@@ -267,7 +272,11 @@ class Starboard(commands.Cog):
                 ON inserted.message_id = Starer.message_id
                 """
             record: asyncpg.Record = await conn.fetchrow(
-                big_ahh_query, payload.message_id, payload.guild_id, payload.message_author_id, stars
+                big_ahh_query,
+                payload.message_id,
+                payload.guild_id,
+                payload.message_author_id,
+                stars,
             )
 
             bot_message_id = record[1]
@@ -300,10 +309,6 @@ class Starboard(commands.Cog):
             query = """UPDATE StarEntry SET bot_message_id=$1 WHERE message_id=$2"""
             await conn.execute(query, content_id, message.id)
 
-    async def remove_star(self, payload: discord.RawReactionActionEvent) -> None:
-        if str(payload.emoji) != '\N{WHITE MEDIUM STAR}':
-            return
-
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         # add to cache first
@@ -312,9 +317,6 @@ class Starboard(commands.Cog):
 
         self.message_cache.update({payload.message_id: msg})
         await self.add_star(payload)
-
-        await asyncio.sleep(5)
-        await msg.add_reaction('\N{WHITE MEDIUM STAR}')
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload: discord.RawMessageDeleteEvent) -> None:
@@ -351,7 +353,13 @@ class Starboard(commands.Cog):
 
     @commands.hybrid_group(fallback='create')
     @commands.has_permissions(manage_guild=True)
-    async def starboard(self, ctx: GuildContext, category: discord.CategoryChannel, *, channel_name: str = 'starboard') -> None:
+    async def starboard(
+        self,
+        ctx: GuildContext,
+        category: discord.CategoryChannel,
+        *,
+        channel_name: str = 'starboard',
+    ) -> None:
         """Creates a new Starboard if one doesnt exist.
 
         Args:
@@ -383,10 +391,17 @@ class Starboard(commands.Cog):
 
             overwrites = {
                 ctx.me: discord.PermissionOverwrite(
-                    view_channel=True, manage_messages=True, send_messages=True, read_messages=True, pin_messages=True
+                    view_channel=True,
+                    manage_messages=True,
+                    send_messages=True,
+                    read_messages=True,
+                    pin_messages=True,
                 ),
                 default_role: discord.PermissionOverwrite(
-                    view_channel=True, manage_messages=False, send_messages=False, pin_messages=False
+                    view_channel=True,
+                    manage_messages=False,
+                    send_messages=False,
+                    pin_messages=False,
                 ),
             }
             starboard_channel = await ctx.guild.create_text_channel(
