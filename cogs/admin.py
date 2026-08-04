@@ -360,6 +360,8 @@ class Admin(commands.Cog):
             return
 
         banned_emojis = await self.grab_emojis(payload.guild_id)
+        if banned_emojis is None:
+            return
 
         for emoji_data in banned_emojis:
             emoji_id = emoji_data[0]
