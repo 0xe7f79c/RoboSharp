@@ -324,6 +324,10 @@ class Admin(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
+
+        if msg.guild is None:
+            return
+
         content = msg.content
 
         emojis = await self.grab_emojis(msg.guild.id)
@@ -350,6 +354,9 @@ class Admin(commands.Cog):
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
         channel = await self.bot.fetch_channel(payload.channel_id)
         msg = await channel.fetch_message(payload.message_id)
+
+        if msg.guild is None:
+            return
 
         if payload.user_id == self.bot.user.id:
             return
