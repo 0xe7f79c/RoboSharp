@@ -236,6 +236,12 @@ class Admin(commands.Cog):
             emoji (int): The Emoji ID to ban from the server.
             reason (str): The message that pops up when a user reacts/sends an emoji.
         """
+
+        try:
+            emoji_id = int(emoji_id)
+        except ValueError:
+            raise AdminError('\N{WHITE QUESTION MARK ORNAMENT} Emoji ID must be a number.')
+
         config = await self.get_banned_emoji_info(int(emoji_id), ctx.guild.id)
         if hasattr(config, 'reason'):
             await ctx.reply(f'Apparently, the emoji ID: `{emoji_id}` is already banned.')
@@ -291,7 +297,7 @@ class Admin(commands.Cog):
         try:
             emoji_id = int(emoji_id)
         except ValueError:
-            raise AdminError('Emoji ID must be a number.')
+            raise AdminError('\N{WHITE QUESTION MARK ORNAMENT} Emoji ID must be a number.')
 
         emoji = await self.get_banned_emoji_info(emoji_id, guild_id)
         if not hasattr(emoji, 'reason'):
