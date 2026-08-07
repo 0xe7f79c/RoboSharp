@@ -17,7 +17,7 @@ VANITY = r"""
                                     |_|    
 """
 
-extensions = ['cogs.starboard', 'cogs.admin', 'cogs.lance']
+extensions = ['cogs.starboard', 'cogs.admin', 'cogs.lance', 'cogs.misc']
 
 
 class Launcher:

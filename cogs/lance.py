@@ -55,9 +55,10 @@ class LanceUtils(commands.Cog):
     @commands.hybrid_group(name='lance')
     @lance_only()
     async def lance_group(self, ctx: GuildContext) -> None:
-        """Lance group"""
+        """More LanceUtils commands."""
 
     @lance_group.command()
+    @lance_only()
     async def votekick(self, ctx: GuildContext, member: Optional[discord.Member], *, delay: int = 3 * 60) -> None:
         """Creates a votekick.
 
@@ -76,9 +77,11 @@ class LanceUtils(commands.Cog):
 
             victim = random.choice(member_seq)
             while True:
+                victim = random.choice(member_seq)
                 if victim.id != PSINI_USER_ID and not victim.bot:
                     break
-                victim = random.choice(member_seq)
+                else:
+                    return await ctx.reply('\N{NO ENTRY} No members available to kick.')
 
             confirm = await ctx.confirm(title='Random user', msg=f'Attempting to kick random user: `{victim.name}`. Proceed?')
             if confirm is None:
@@ -100,7 +103,7 @@ class LanceUtils(commands.Cog):
 
         embed.set_footer(text='React with \N{WHITE HEAVY CHECK MARK} to vote for the kick, or \N{CROSS MARK} otherwise.')
 
-        message = await ctx.send(content=f'Votekick initated by Lance (ID: {LANCE_USER_ID})', embed=embed)
+        message = await ctx.send(content=f'(LanceUtils) Votekick initated (ID: {LANCE_USER_ID})', embed=embed)
         for emoji in POLL_EMOJIS:
             await message.add_reaction(emoji)
 

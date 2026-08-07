@@ -360,12 +360,7 @@ class Starboard(commands.Cog):
         *,
         channel_name: str = 'starboard',
     ) -> None:
-        """Creates a new Starboard if one doesnt exist.
-
-        Args:
-            category (discord.CategoryChannel): The category to place the Starboard channel under.
-            channel_name (str, optional): The name of the Starboard channel. Defaults to 'starboard'.
-        """
+        """Creates a new starboard under a specific category."""
         await ctx.defer()
         guild_id = ctx.guild.id
         starboard = await self.get_starboard(guild_id)

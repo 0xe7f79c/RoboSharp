@@ -9,7 +9,7 @@ from discord.ext import commands
 from cogs.utils.context import GuildContext, RContext
 from cogs.utils.logging import LogHandler
 
-DEBUG = True
+DEBUG = False
 
 
 class RSharp(commands.Bot):
@@ -23,6 +23,7 @@ class RSharp(commands.Bot):
 
     async def setup_hook(self):
         print('on_ready called')
+
         if DEBUG:
             guild = discord.Object(id=678655372197625858)
             self.tree.copy_global_to(guild=guild)
