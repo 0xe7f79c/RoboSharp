@@ -9,7 +9,7 @@ from discord.ext import commands
 from cogs.utils.context import GuildContext, RContext
 from cogs.utils.logging import LogHandler
 
-DEBUG = True
+DEBUG = False
 
 
 class RSharp(commands.Bot):
@@ -28,6 +28,8 @@ class RSharp(commands.Bot):
             self.tree.copy_global_to(guild=guild)
             synced = await self.tree.sync(guild=guild)
             print(synced)
+        else:
+            await self.tree.sync()
 
     async def get_context(
         self,

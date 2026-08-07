@@ -372,13 +372,14 @@ class Admin(commands.Cog):
             emoji_id = emoji_data[0]
             for reaction in reactions:
                 reacted = reaction.emoji
+                if not hasattr(reacted, 'id'):
+                    continue
+
                 if reacted.id == emoji_id:
                     try:
                         user = self.bot.get_user(payload.user_id)
-
                         if user is None:
                             return
-
                         await reaction.remove(user)
                         return
                     except discord.Forbidden:
