@@ -9,7 +9,7 @@ from discord.ext import commands
 from cogs.utils.context import GuildContext, RContext
 from cogs.utils.logging import LogHandler
 
-DEBUG = False
+DEBUG = True
 
 
 class RSharp(commands.Bot):

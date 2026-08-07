@@ -158,11 +158,7 @@ class Admin(commands.Cog):
     @commands.hybrid_group()
     @commands.has_guild_permissions(manage_roles=True)
     async def roles(self, ctx: GuildContext) -> None:
-        """Several commands related to role creation/management.
-
-        Args:
-            ctx (GuildContext): _description_
-        """
+        """Several commands related to role creation/management."""
 
         default_role = await self.get_default_role(ctx.guild.id)
         if default_role is None:
@@ -179,7 +175,6 @@ class Admin(commands.Cog):
         """Sets the default role for this guild.
 
         Args:
-            ctx (GuildContext): _description_
             role (discord.Role): The role to set as the default role.
         """
 
@@ -232,7 +227,6 @@ class Admin(commands.Cog):
         """Bans an emoji.
 
         Args:
-            ctx (GuildContext): _description_
             emoji (int): The Emoji ID to ban from the server.
             reason (str): The message that pops up when a user reacts/sends an emoji.
         """
@@ -262,11 +256,7 @@ class Admin(commands.Cog):
 
     @emoji.command()
     async def bans(self, ctx: GuildContext) -> None:
-        """Lists the currently banned emojis.
-
-        Args:
-            ctx (GuildContext): _description_
-        """
+        """Lists the currently banned emojis."""
 
         query = """SELECT reason, emoji_id FROM BannedEmoji WHERE guild_id=$1"""
         record = await self.pool.fetch(query, ctx.guild.id)
@@ -288,7 +278,6 @@ class Admin(commands.Cog):
         """Lifts the ban placed on an emoji.
 
         Args:
-            ctx (GuildContext): _description_
             emoji_id (str): The Emoji ID to ban.
         """
         guild_id = ctx.guild.id
