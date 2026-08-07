@@ -135,6 +135,26 @@ class Admin(commands.Cog):
             conf = BannedEmojiConfig(self.bot, guild_id, emoji_id, record)
             return conf
 
+    async def grab_emojis(self, guild_id: int) -> Optional[List[Tuple[int]]]:
+        query = """SELECT reason, emoji_id FROM BannedEmoji WHERE guild_id=$1"""
+        record = await self.pool.fetch(query, guild_id)
+
+        if record is None or record == []:
+            return None
+
+        emojis = []
+        for data in record:
+            emoji_id = data[1]
+            reason = data[0]
+
+            info = (emoji_id, reason)
+            emojis.append(info)
+
+        if emojis == []:
+            return None
+
+        return emojis
+
     @commands.hybrid_group()
     @commands.has_guild_permissions(manage_roles=True)
     async def roles(self, ctx: GuildContext) -> None:
@@ -302,26 +322,6 @@ class Admin(commands.Cog):
             # should probably handle this better but for resistivity purposes just handle it
             return
 
-    async def grab_emojis(self, guild_id: int) -> Optional[List[Tuple[int]]]:
-        query = """SELECT reason, emoji_id FROM BannedEmoji WHERE guild_id=$1"""
-        record = await self.pool.fetch(query, guild_id)
-
-        if record is None or record == []:
-            return None
-
-        emojis = []
-        for data in record:
-            emoji_id = data[1]
-            reason = data[0]
-
-            info = (emoji_id, reason)
-            emojis.append(info)
-
-        if emojis == []:
-            return None
-
-        return emojis
-
     @commands.Cog.listener()
     async def on_message(self, msg: discord.Message):
 
@@ -340,10 +340,8 @@ class Admin(commands.Cog):
 
         for emoji_data in emojis:
             emoji_id = emoji_data[0]
-            reason = emoji_data[1]
             if str(emoji_id) in content:
                 try:
-                    await msg.channel.send(f'{msg.author.mention} That emoji is banned. Reason: {reason}', delete_after=3)
                     await msg.delete()
                     return
                 except discord.Forbidden:
@@ -372,8 +370,6 @@ class Admin(commands.Cog):
 
         for emoji_data in banned_emojis:
             emoji_id = emoji_data[0]
-            reason = emoji_data[1]
-
             for reaction in reactions:
                 reacted = reaction.emoji
                 if reacted.id == emoji_id:
@@ -383,7 +379,6 @@ class Admin(commands.Cog):
                         if user is None:
                             return
 
-                        await channel.send(f'{user.mention} You cannot use that emoji. Reason: {reason}', delete_after=3)
                         await reaction.remove(user)
                         return
                     except discord.Forbidden:
