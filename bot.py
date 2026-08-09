@@ -6,10 +6,11 @@ import discord
 from discord import Client, Intents, Message
 from discord.ext import commands
 
+from cogs.utils.config import Config
 from cogs.utils.context import GuildContext, RContext
 from cogs.utils.logging import LogHandler
 
-DEBUG = False
+DEBUG = True
 
 
 class RSharp(commands.Bot):
@@ -17,9 +18,11 @@ class RSharp(commands.Bot):
     logger: Logger
     pool: asyncpg.Pool
 
-    def __init__(self, prefix: str) -> None:
+    def __init__(self, prefix: str, config: Config) -> None:
         intents = Intents.all()
         super().__init__(command_prefix=prefix, intents=intents)
+
+        RContext.config = config
 
     async def setup_hook(self):
         print('on_ready called')

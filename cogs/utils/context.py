@@ -6,6 +6,9 @@ from discord import Guild
 from discord.ext import commands
 
 if TYPE_CHECKING:
+    from cogs.utils.config import Config
+
+if TYPE_CHECKING:
     from cogs.admin import Admin
 
     from ...bot import RSharp
@@ -45,6 +48,7 @@ class ConfirmView(discord.ui.View):
 
 class RContext(commands.Context):
     bot: RSharp
+    config: Config
 
     def __init__(self, **kwargs: Dict[str, Any]) -> None:
         super().__init__(**kwargs)

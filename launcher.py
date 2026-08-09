@@ -27,8 +27,7 @@ class Launcher:
         self.prefix = config.prefix
         self.pg_dsn = config.pg_dsn
         self.remove_old_help = config.remove_default_help
-
-        self.bot = RSharp(self.prefix)
+        self.bot = RSharp(self.prefix, config)
 
     async def setup_pool(self, bot: RSharp) -> None:
         bot.pool = await asyncpg.create_pool(self.pg_dsn)

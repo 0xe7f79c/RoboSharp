@@ -8,6 +8,7 @@ class ResolvedConfig(TypedDict):
     token: str
     pg_dsn: str
     remove_default_help: bool
+    bunker_guild_id: str
 
 
 class ConfigReader:
@@ -29,12 +30,10 @@ class ConfigReader:
         token = config['token']
         pg_dsn = config['pg_dsn']
         remove_default_help = bool(config['remove_default_help'])
+        bunker_guild_id = config['bunker_guild_id']
 
         return ResolvedConfig(
-            prefix=prefix,
-            token=token,
-            pg_dsn=pg_dsn,
-            remove_default_help=remove_default_help,
+            prefix=prefix, token=token, pg_dsn=pg_dsn, remove_default_help=remove_default_help, bunker_guild_id=bunker_guild_id
         )
 
 
@@ -47,6 +46,7 @@ class Config:
         self._token: str = self.config_dict['token']
         self._pg_dsn: str = self.config_dict['pg_dsn']
         self._remove_default_help: bool = self.config_dict['remove_default_help']
+        self._bunker_guild_id: str = self.config_dict['bunker_guild_id']
 
     @property
     def prefix(self) -> str:
@@ -63,3 +63,7 @@ class Config:
     @property
     def remove_default_help(self) -> bool:
         return self._remove_default_help
+
+    @property
+    def bunker_guild_id(self) -> str:
+        return self._bunker_guild_id

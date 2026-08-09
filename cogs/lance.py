@@ -6,38 +6,16 @@ import discord
 from discord.app_commands import AppCommandError
 from discord.ext import commands
 
-from bot import DEBUG, GuildContext, RSharp
+from bot import GuildContext, RSharp
 from cogs.admin import AdminError
-from cogs.starboard import Check
-
-PSINI_USER_ID = 593294576026910720
-
-if not DEBUG:
-    LANCE_USER_ID = 514542702013186049
-else:
-    LANCE_USER_ID = PSINI_USER_ID
+from cogs.utils import checks
+from cogs.utils.checks import LANCE_USER_ID, PSINI_USER_ID
 
 POLL_EMOJIS = ['\N{WHITE HEAVY CHECK MARK}', '\N{CROSS MARK}']
 
 
 class LanceError(ValueError, AppCommandError):
     pass
-
-
-def lance_only() -> Check[GuildContext]:
-    async def wrapper(ctx: GuildContext) -> bool:
-        if ctx.guild is None:
-            return False
-        elif ctx.author.id != LANCE_USER_ID:
-            raise LanceError('This command can only be run by lance.')
-
-        permissions = ctx.channel.permissions_for(ctx.author)
-        if not permissions.administrator:
-            raise LanceError('\N{NO ENTRY} LanceUtils is blocked if Lance isnt Admin.')
-
-        return True
-
-    return commands.check(wrapper)
 
 
 class LanceUtils(commands.Cog):
@@ -53,12 +31,13 @@ class LanceUtils(commands.Cog):
                 return await ctx.send(str(error))
 
     @commands.hybrid_group(name='lance')
-    @lance_only()
+    @checks.lance_only()
     async def lance_group(self, ctx: GuildContext) -> None:
         """More LanceUtils commands."""
 
     @lance_group.command()
-    @lance_only()
+    @checks.lance_only()
+    @checks.bunker_only()
     async def votekick(self, ctx: GuildContext, member: Optional[discord.Member], *, delay: int = 3 * 60) -> None:
         """Creates a votekick.
 
@@ -92,7 +71,7 @@ class LanceUtils(commands.Cog):
 
             member = victim
 
-        if member.id == PSINI_USER_ID:
+        if member.id == PSINI_USER_ID or member.id == ctx.me.id:
             raise LanceError('\N{NO ENTRY} Nice try')
 
         embed = discord.Embed(
