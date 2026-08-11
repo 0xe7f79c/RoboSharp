@@ -125,27 +125,6 @@ class Starboard(commands.Cog):
         return discord.Color.from_rgb(int(red), int(green), int(blue))
 
     async def get_message(self, channel_id: int, message_id: int) -> Optional[discord.Message]:
-        """Finds a message in the bots internal cache.
-
-        Args
-        ----
-            channel_id (int): The channel ID of where the message lives.
-            message_id (int): The message id of the message.
-
-        Returns
-        -------
-            Optional[discord.Message]: The cached message object. None if the message was deleted.
-
-        Raises
-        -------
-            discord.Forbidden
-                If the resource was behind a permission the bot doesn't possess.
-            discord.InvalidData
-                An unknown channel type was received from Discord.
-            HTTPException
-                Retrieving the channel failed.
-        """
-
         try:
             if message_id in self.message_cache:
                 msg = self.message_cache[message_id]
@@ -158,18 +137,7 @@ class Starboard(commands.Cog):
         except discord.NotFound:
             return None
 
-    async def create_star_message(self, message: discord.Message, stars: int, time) -> Tuple[str, discord.Embed, discord.ui.View]:
-        """Creates components for Starboard posts.
-
-        Args:
-            message (discord.Message): The message that was starred.
-            stars (int): How many stars the message obtained.
-            time (datetime, optional): The time this interaction was registered.
-        Returns:
-            Tuple[str, discord.Embed, discord.ui.View]: The individual parts of the post as a tuple. First being the heading,
-            second being the embed, and the third being the view containing the jump button.
-        """
-
+    async def create_star_message(self, message: discord.Message, stars: int) -> Tuple[str, discord.Embed, discord.ui.View]:
         embed_col = self.get_color_brightness(stars)
         embed = discord.Embed(color=embed_col)
 
@@ -213,9 +181,9 @@ class Starboard(commands.Cog):
             label='Jump to original message',
             url=message.jump_url,
         )
+
         view = discord.ui.View(timeout=None)
         view.add_item(button)
-
         return (heading, embed, view)
 
     async def add_star(self, payload: discord.RawReactionActionEvent) -> None:
