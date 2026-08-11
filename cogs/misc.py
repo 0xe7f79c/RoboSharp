@@ -19,7 +19,6 @@ class Misc(commands.Cog):
     async def sync(self, ctx: GuildContext) -> None:
         """Synchronizes the bots commands to this guild."""
         self.bot.tree.copy_global_to(ctx.guild)
-
         try:
             commands = await self.bot.tree.sync(ctx.guild)
             return await ctx.reply(f'\N{OK HAND SIGN} Synchronized all app commands. ({len(commands)} total commands)')
