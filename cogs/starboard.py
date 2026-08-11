@@ -156,6 +156,7 @@ class Starboard(commands.Cog):
         original_attachments = message.attachments
         if len(original_attachments) > 0:
             attachment = original_attachments[0]
+
             if attachment.content_type in ALLOWED_MIMES:
                 embed.set_image(url=attachment.url)
             else:
@@ -170,6 +171,7 @@ class Starboard(commands.Cog):
             name = who.name
 
             content = resolved.clean_content
+
             if len(content) > MAX_FIELD_LEN:
                 content = content[0:MAX_FIELD_LEN]
                 content += f'[...]({resolved.jump_url})'
@@ -196,6 +198,7 @@ class Starboard(commands.Cog):
             raise StarboardError('\N{NO ENTRY} Starboard not found.')
 
         overwrites = starboard_channel.overwrites_for(self.bot.user)
+
         if not (overwrites.send_messages and overwrites.read_messages and overwrites.manage_messages):
             raise StarboardError(
                 f'\N{NO ENTRY SIGN} I do not have permissions to send/manage messages in {starboard_channel.mention}.'
@@ -203,8 +206,10 @@ class Starboard(commands.Cog):
 
         try:
             message = await self.get_message(payload.channel_id, payload.message_id)
+
             if message is None:
                 raise StarboardError('\N{WARNING SIGN} The message was deleted.')
+
         except discord.Forbidden:
             raise StarboardError('\N{NO ENTRY SIGN} Permission error: Could not find message.')
 
@@ -279,7 +284,6 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent) -> None:
-        # add to cache first
         chan = await self.bot.fetch_channel(payload.channel_id)
         msg = await chan.fetch_message(payload.message_id)
         self.message_cache.update({payload.message_id: msg})
@@ -330,6 +334,7 @@ class Starboard(commands.Cog):
     ) -> None:
         """Creates a new starboard under a specific category."""
         await ctx.defer()
+
         guild_id = ctx.guild.id
         starboard = await self.get_starboard(guild_id)
         if hasattr(starboard, 'locked'):
@@ -347,9 +352,7 @@ class Starboard(commands.Cog):
                     return
 
                 query = """DELETE FROM Starboards WHERE guild_id=$1"""
-
                 await self.pool.execute(query, guild_id)
-
             else:
                 await ctx.reply(f'It looks like you already have a Starboard for this server: {starboard.channel.mention}...')
                 return
@@ -371,6 +374,7 @@ class Starboard(commands.Cog):
                     pin_messages=False,
                 ),
             }
+
             starboard_channel = await ctx.guild.create_text_channel(
                 channel_name,
                 reason=f'\N{DIZZY SYMBOL} Starboard created by: {ctx.author.name}. (ID: #{ctx.author.id})',
