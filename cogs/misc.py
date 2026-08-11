@@ -27,6 +27,8 @@ class Misc(commands.Cog):
             return await ctx.reply('\N{NO ENTRY} Could not sync. (No `applications.commands` scope in guild...)')
         except CommandSyncFailure:
             return await ctx.reply('\N{NO ENTRY} Could not sync. (There is an error in one of your commands...)')
+        except Exception:
+            return await ctx.reinvoke('\N{WHITE QUESTION MARK ORNAMENT} Something went wrong. (Internal error)')
 
 
 async def setup(bot: RSharp) -> None:
