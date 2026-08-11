@@ -213,7 +213,7 @@ class Admin(commands.Cog):
             except Exception:
                 raise AdminError('An unknown (internal) error occured.')
 
-    @commands.hybrid_group()
+    @commands.hybrid_group(name='emojis')
     @commands.has_guild_permissions(manage_emojis=True)
     async def emoji(self, ctx: GuildContext):
         """Commands to manage emojis.
