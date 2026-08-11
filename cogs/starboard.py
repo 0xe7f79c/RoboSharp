@@ -73,6 +73,7 @@ class Starboard(commands.Cog):
     def __init__(self, bot: RSharp) -> None:
         self.bot = bot
         self.pool = bot.pool
+
         # message id -> message
         self.message_cache: Dict[int, discord.Message] = {}
         self.clear_message_cache_loop.start()
