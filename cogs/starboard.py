@@ -271,6 +271,7 @@ class Starboard(commands.Cog):
                 FROM inserted LEFT JOIN Starer
                 ON inserted.message_id = Starer.message_id
                 """
+
             record: asyncpg.Record = await conn.fetchrow(
                 big_ahh_query,
                 payload.message_id,
@@ -298,7 +299,6 @@ class Starboard(commands.Cog):
                     bot_entry_message = await self.get_message(starboard_channel.id, bot_message_id)
                     if bot_entry_message is None:
                         raise StarboardError('\N{WARNING SIGN} Could not find the bots original message.')
-
                     await bot_entry_message.edit(content=heading, embed=embed, view=view)
                     return
                 except discord.Forbidden:
@@ -314,7 +314,6 @@ class Starboard(commands.Cog):
         # add to cache first
         chan = await self.bot.fetch_channel(payload.channel_id)
         msg = await chan.fetch_message(payload.message_id)
-
         self.message_cache.update({payload.message_id: msg})
         await self.add_star(payload)
 
@@ -336,6 +335,7 @@ class Starboard(commands.Cog):
             conn: asyncpg.Connection
             query = """DELETE FROM StarEntry WHERE message_id=$1"""
             await conn.execute(query, payload.message_id)
+
             try:
                 if bot_message_id is None:
                     return
@@ -370,14 +370,18 @@ class Starboard(commands.Cog):
                     'The Starboard channel was deleted. Would you like to start over?',
                     '\N{WHITE QUESTION MARK ORNAMENT} Could not find Starboard',
                 )
+
                 if confirmation is False:
                     await ctx.reply('\N{WHITE QUESTION MARK ORNAMENT} Starboard creation aborted.')
                     return
                 elif confirmation is None:
                     await ctx.reply('You took too long. Aborted.')
                     return
+
                 query = """DELETE FROM Starboards WHERE guild_id=$1"""
+
                 await self.pool.execute(query, guild_id)
+
             else:
                 await ctx.reply(f'It looks like you already have a Starboard for this server: {starboard.channel.mention}...')
                 return
@@ -413,14 +417,18 @@ class Starboard(commands.Cog):
                 )"""
                 await self.pool.execute(query, guild_id, starboard_channel.id)
                 await ctx.reply(f'\N{DIZZY SYMBOL} Starboard creation successful: {starboard_channel.mention}')
+
             except Exception:
                 await ctx.reply('An unkown error occured.')
                 return
+
         except discord.Forbidden:
             await ctx.reply('\N{EXCLAMATION QUESTION MARK} I do not have enough permissions to create this channel.')
             return
+
         except StarboardError:
             return
+
         except Exception:
             await ctx.reply('An unknown error occured.')
             return
@@ -440,6 +448,7 @@ class Starboard(commands.Cog):
         Locks the Starboard.
         """
         await ctx.defer()
+
         starboard = ctx.starboard
 
         if starboard.locked:
@@ -457,6 +466,7 @@ class Starboard(commands.Cog):
         Unlocks the Starboard.
         """
         await ctx.defer()
+
         starboard = ctx.starboard
 
         if not starboard.locked:
