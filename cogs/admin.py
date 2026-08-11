@@ -214,10 +214,9 @@ class Admin(commands.Cog):
                 raise AdminError('An unknown (internal) error occured.')
 
     @commands.hybrid_group(name='emojis')
-    @commands.has_guild_permissions(manage_emojis=True)
+    @commands.has_guild_permissions(manage_messages=True)
     async def emoji(self, ctx: GuildContext):
         """Commands to manage emojis.
-
         Args:
             ctx (GuildContext): _description_
         """
@@ -225,7 +224,6 @@ class Admin(commands.Cog):
     @emoji.command()
     async def ban(self, ctx: GuildContext, emoji_id, reason: str) -> None:
         """Bans an emoji.
-
         Args:
             emoji (int): The Emoji ID to ban from the server.
             reason (str): The message that pops up when a user reacts/sends an emoji.
