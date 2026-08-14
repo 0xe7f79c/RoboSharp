@@ -55,6 +55,7 @@ def starboard_only() -> Check[StarContext]:
         starboard = await star_cog.get_starboard(guild_id)
 
         if starboard.channel is None:
+            await ctx.reply('\N{NO ENTRY SIGN} Could not find/access this guilds Starboard.')
             return False
 
         ctx.starboard = starboard
@@ -255,8 +256,8 @@ class Starboard(commands.Cog):
             )
 
             bot_message_id = record[1]
-            created_on = record[2]
-            content_message = await self.create_star_message(message, stars, created_on)
+            # created_on = record[2]
+            content_message = await self.create_star_message(message, stars)
             heading = content_message[0]
             embed = content_message[1]
             view = content_message[2]
@@ -406,13 +407,32 @@ class Starboard(commands.Cog):
             await ctx.reply('An unknown error occured.')
             return
 
-    @starboard.group(name='threshold', fallback='view')
+    @starboard.group(name='threshold', invoke_without_command=True)
     @starboard_only()
     async def _threshold(self, ctx: StarContext) -> None:
         """Shows many \N{WHITE MEDIUM STAR}'s a message needs."""
         await ctx.defer()
         starboard = ctx.starboard
         await ctx.reply(f"A message needs: {starboard.post_requirement} \N{WHITE MEDIUM STAR}'s to become a Starboard post.")
+
+    @_threshold.command()
+    @commands.bot_has_guild_permissions(manage_guild=True)
+    @starboard_only()
+    async def set(self, ctx: StarContext, amount: int):
+        """Sets the starboard threshold to a new value."""
+        if amount > 50:
+            return await ctx.reply('\N{WHITE QUESTION MARK ORNAMENT} The requirement must be a reasonable amount.')
+
+        starboard = ctx.starboard
+        if starboard.post_requirement == amount:
+            return await ctx.reply(
+                f"\N{WHITE QUESTION MARK ORNAMENT} The provided threshold is already set to {amount} \N{WHITE MEDIUM STAR}'s"
+            )
+
+        query = """UPDATE Starboards SET post_requirement=$1 WHERE guild_id=$2"""
+        await self.pool.execute(query, amount, ctx.guild.id)
+        starboard.post_requirement = 3
+        return await ctx.reply(f"\N{OK HAND SIGN} Requirement changed to: {amount} \N{WHITE MEDIUM STAR}'s")
 
     @starboard.command()
     @starboard_only()
