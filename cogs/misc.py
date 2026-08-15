@@ -1,3 +1,5 @@
+from typing import Any, List, Mapping, Optional
+
 import discord
 from discord.app_commands import CommandSyncFailure
 from discord.ext import commands
@@ -10,11 +12,122 @@ SCOPE_COPY_GUILD = 'copy-guild'
 SCOPE_COPY_GLOBAL = 'copy-global'
 
 
+class HelpEmbed(commands.HelpCommand):
+    def __init__(self, **options):
+        super().__init__(**options)
+
+    async def send_bot_help(self, mapping: Mapping[Optional[commands.Cog], List[commands.Command]]):
+        embed = discord.Embed(
+            color=discord.Color.og_blurple(),
+            title='About',
+            description='Hello, welcome to the help menu! Use the categories below to explore this bots features. You can also type `/` to see application commands.',
+        )
+
+        for cog in mapping.keys():
+            if cog is not None:
+                cog_name = cog.qualified_name
+
+                if hasattr(cog, 'cog_emoji'):
+                    emoji = cog.cog_emoji()
+                    cog_name = f'{emoji} {cog_name}'
+
+                embed.add_field(name=cog_name, value=f'{cog.description}', inline=False)
+
+        embed.set_footer(
+            text=f'Tip: Use {self.context.prefix}help `Module` to get commands that lie in a specific module.', icon_url=None
+        )
+
+        await self.context.reply(embed=embed)
+
+    async def send_cog_help(self, cog: commands.Cog):
+        name = cog.qualified_name
+        description = cog.description
+
+        if hasattr(cog, 'cog_emoji'):
+            emoji = cog.cog_emoji()
+            name = f'{emoji} {name}'
+
+        embed = discord.Embed(
+            color=discord.Color.og_blurple(),
+            title=name,
+            description=description,
+        )
+
+        for command in cog.get_commands():
+            if command.hidden:
+                continue
+
+            command_name = command.name
+            command_docstr = command.short_doc
+
+            embed.add_field(name=command_name, value=command_docstr)
+
+        return await self.context.reply(embed=embed)
+
+    async def send_command_help(self, command: commands.Command[Any, ..., Any]):
+        cog: commands.Cog = command.cog
+        name = cog.qualified_name
+        cog_doc = cog.description
+        if hasattr(cog, 'cog_emoji'):
+            emoji = cog.cog_emoji()
+            name = f'{emoji} {name}'
+
+        embed = discord.Embed(color=discord.Color.og_blurple(), title=name, description=f'{cog_doc}')
+
+        command_name = command.name
+        command_breif = command.short_doc
+        command_sig = command.signature
+
+        has_arg = len(command_sig) > 0
+        prefix = self.context.prefix
+
+        if has_arg:
+            command_usage = f'{prefix}{command_name} {command.signature}'
+        else:
+            command_usage = f'{prefix}{command_name}'
+
+        embed.add_field(name=command_name, value=command_breif, inline=False)
+        embed.add_field(name='Usage', value=command_usage, inline=False)
+
+        await self.context.reply(embed=embed)
+
+    async def send_group_help(self, group: commands.Group[Any, ..., Any]):
+        embed = discord.Embed(
+            color=discord.Color.og_blurple(),
+            title=f'Command group: `{group.name}`',
+            description='Below are the commands inside this group.',
+        )
+
+        for command in group.commands:
+            if command.hidden:
+                continue
+
+            name = command.name
+            description = command.short_doc
+
+            if hasattr(command, 'cog_emoji'):
+                emoji = command.cog_emoji()
+                name = f'{emoji} {name}'
+
+            embed.add_field(name=name, value=f'> {description}', inline=False)
+
+        embed.set_footer(
+            text=f'Tip: Use `{self.context.prefix}help <group> <command name>` to get more information of a command in this group.',
+            icon_url=None,
+        )
+
+        return await self.context.reply(embed=embed)
+
+
 class Misc(commands.Cog):
     """Miscellaneous commands/features."""
 
     def __init__(self, bot: RSharp) -> None:
         self.bot = bot
+        self.bot.help_command = HelpEmbed()
+
+    def cog_emoji(self) -> str:
+        return '\N{WHITE QUESTION MARK ORNAMENT}'
 
     @commands.is_owner()
     @commands.command(hidden=True)

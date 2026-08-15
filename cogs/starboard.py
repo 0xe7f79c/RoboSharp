@@ -79,6 +79,9 @@ class Starboard(commands.Cog):
         self.message_cache: Dict[int, discord.Message] = {}
         self.clear_message_cache_loop.start()
 
+    def cog_emoji(self) -> str:
+        return '\N{DIZZY SYMBOL}'
+
     async def cog_command_error(self, ctx, error) -> None:
         if isinstance(error, commands.HybridCommandError):
             error = error.original

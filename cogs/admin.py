@@ -98,6 +98,9 @@ class Admin(commands.Cog):
         self.bot = bot
         self.pool = self.bot.pool
 
+    def cog_emoji(self) -> str:
+        return '\N{INPUT SYMBOL FOR NUMBERS}'
+
     async def cog_command_error(self, ctx, error):
         if isinstance(error, Exception):
             error = error.original

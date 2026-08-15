@@ -21,19 +21,7 @@ class RSharp(commands.Bot):
     def __init__(self, prefix: str, config: Config) -> None:
         intents = Intents.all()
         super().__init__(command_prefix=prefix, intents=intents)
-
         RContext.config = config
-
-    async def setup_hook(self):
-        print('on_ready called')
-
-        if DEBUG:
-            guild = discord.Object(id=678655372197625858)
-            self.tree.copy_global_to(guild=guild)
-            synced = await self.tree.sync(guild=guild)
-            print(synced)
-        else:
-            await self.tree.sync()
 
     async def get_context(
         self,
