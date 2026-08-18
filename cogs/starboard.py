@@ -400,7 +400,7 @@ class Starboard(commands.Cog):
                 return
 
         except discord.Forbidden:
-            await ctx.reply('\N{EXCLAMATION QUESTION MARK} I do not have enough permissions to create this channel.')
+            await ctx.reply('\N{WHITE QUESTION MARK ORNAMENT} I do not have enough permissions to create this channel.')
             return
 
         except StarboardError:
