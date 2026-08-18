@@ -18,6 +18,7 @@ class ValidStarChannel(discord.TextChannel):
 
 MAX_FIELD_LEN = 120
 ALLOWED_MIMES = ['image/jpeg', 'image/webp', 'image/png', 'image/gif']
+UNKNOWN_ICON_URL = 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGt0eHB6azZzdGVnb2l6Y3NwcW14MHI4bWNua2tpc2ZhNG9ranRiaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/YhxdbIJZHVHMDmyHJp/giphy.gif'
 
 
 class GuildStarboard:
@@ -150,8 +151,11 @@ class Starboard(commands.Cog):
         heading = f'{display_emoji} {stars} | {message.channel.mention}'
 
         author_name = message.author.name
-        author_icon = message.author.avatar
-        embed.set_author(name=author_name, icon_url=author_icon.url)
+        author_icon: Optional[discord.Asset] = message.author.avatar
+        if author_icon is None:
+            embed.set_author(name=author_name, icon_url=UNKNOWN_ICON_URL)
+        else:
+            embed.set_author(name=author_name, icon_url=author_icon.url)
 
         content = message.clean_content
         if len(content) > MAX_FIELD_LEN:
@@ -161,31 +165,37 @@ class Starboard(commands.Cog):
         original_attachments = message.attachments
         if len(original_attachments) > 0:
             attachment = original_attachments[0]
-
             if attachment.content_type in ALLOWED_MIMES:
+                embed.add_field(name='Image', value=f'[Download]({attachment.url})', inline=False)
                 embed.set_image(url=attachment.url)
             else:
                 embed.add_field(name='File', value=f'[View file]({attachment.url})', inline=False)
 
-        embed.add_field(name='Message', value=content)
+        content = message.clean_content
+        if not len(content) <= 0:
+            embed.add_field(name='Message', value=content)
+
+        button_label: str = 'Jump to original message'
 
         has_reply_content = True if message.reference is not None else False
         if has_reply_content:
             resolved = message.reference.resolved
             who = resolved.author
-            name = who.name
-
             content = resolved.clean_content
 
-            if len(content) > MAX_FIELD_LEN:
-                content = content[0:MAX_FIELD_LEN]
-                content += f'[...]({resolved.jump_url})'
+            if resolved is not None:
+                if len(content) > MAX_FIELD_LEN:
+                    content = content[0:MAX_FIELD_LEN]
+                    content += f'[...]({resolved.jump_url})'
 
-            embed.add_field(name=f'Replying to {name}', value=f'> {content}', inline=False)
+                embed.add_field(name='Replying to...', value=f'**{who.name}**', inline=False)
+                if resolved.embeds == [] and len(resolved.attachments) == 0:
+                    embed.add_field(name='Source', value=f'> {content}', inline=False)
+                button_label = 'Jump to starred message'
 
         button = discord.ui.Button(
             style=discord.ButtonStyle.green,
-            label='Jump to original message',
+            label=button_label,
             url=message.jump_url,
         )
 
