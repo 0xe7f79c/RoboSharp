@@ -1,6 +1,5 @@
-from ast import Tuple
 from itertools import batched
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import asyncpg
 import discord
