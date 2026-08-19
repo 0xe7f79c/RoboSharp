@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 import asyncpg
 import discord
@@ -18,6 +18,7 @@ class ValidStarChannel(discord.TextChannel):
 
 MAX_FIELD_LEN = 120
 ALLOWED_MIMES = ['image/jpeg', 'image/webp', 'image/png', 'image/gif']
+VALID_IMAGE_ATTACHMENTS = ('.jpg', '.jpeg', '.png', '.webp', '.gif')
 UNKNOWN_ICON_URL = 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGt0eHB6azZzdGVnb2l6Y3NwcW14MHI4bWNua2tpc2ZhNG9ranRiaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/YhxdbIJZHVHMDmyHJp/giphy.gif'
 
 
@@ -143,6 +144,69 @@ class Starboard(commands.Cog):
         except discord.NotFound:
             return None
 
+    def handle_message_length(self, clean_content: str, jump_url: str) -> str:
+        if len(clean_content) > MAX_FIELD_LEN:
+            content = f'{clean_content[0:MAX_FIELD_LEN]}'
+            content += f'[...]({jump_url})'
+            return content
+        else:
+            return clean_content
+
+    def handle_attachment(self, message: discord.Message, embed: discord.Embed):
+        attachments: List[discord.Attachment] = message.attachments
+
+        if len(attachments) > 0:
+            first = attachments[0]
+            file_extension = first.filename
+
+            if first.content_type in ALLOWED_MIMES or file_extension.endswith(VALID_IMAGE_ATTACHMENTS):
+                embed.add_field(name='Image', value=f'[Download]({first.url})', inline=False)
+                embed.set_image(url=first.url)
+            else:
+                embed.add_field(name='File', value=f'[View content]({message.jump_url})', inline=False)
+
+    def parse_metadata(self, message: discord.Message, embed: discord.Embed):
+        self.handle_attachment(message, embed)
+
+        clean_msg = message.clean_content
+        if not len(clean_msg) <= 0:
+            embed.add_field(name='Message', value=clean_msg, inline=False)
+
+        snapshots = message.message_snapshots
+        if not snapshots == []:
+            first = snapshots[0]
+            fwd_content = self.handle_message_length(first.content, message.jump_url)
+            cached_msg = first.cached_message
+
+            if cached_msg is not None:
+                who = cached_msg.author
+                where = cached_msg.guild
+                embed.add_field(name='From...', value=f'[{where.name}]({cached_msg.jump_url})', inline=False)
+                embed.add_field(name='Original author', value=f'{who.name}', inline=False)
+                embed.add_field(name='Message', value=f'{fwd_content}', inline=False)
+                self.handle_attachment(cached_msg, embed)
+            else:
+                if len(fwd_content) > 0:
+                    embed.add_field(name='(Forwarded) Message', value=f'{fwd_content}', inline=False)
+
+        ref = message.reference
+        if ref is not None:
+            resolved = ref.resolved
+            if resolved is not None:
+                if resolved is discord.DeletedReferencedMessage:
+                    return
+                src_msg = resolved.clean_content  # type: ignore
+                src_msg = self.handle_message_length(src_msg, resolved.jump_url)  # type: ignore
+                who = resolved.author
+                name = who.name
+                if name == message.author.name:
+                    name = 'Themselves'
+                embed.add_field(name='Replying to...', value=f'{name}', inline=False)
+                if resolved.embeds == []:
+                    if not len(src_msg) == 0:
+                        embed.add_field(name='Source', value=f'> {src_msg}', inline=False)
+                    self.handle_attachment(resolved, embed)
+
     async def create_star_message(self, message: discord.Message, stars: int) -> Tuple[str, discord.Embed, discord.ui.View]:
         embed_col = self.get_color_brightness(stars)
         embed = discord.Embed(color=embed_col)
@@ -157,45 +221,11 @@ class Starboard(commands.Cog):
         else:
             embed.set_author(name=author_name, icon_url=author_icon.url)
 
-        content = message.clean_content
-        if len(content) > MAX_FIELD_LEN:
-            content = f'{content[0:MAX_FIELD_LEN]}'
-            content += f'[...]({message.jump_url})'
-
-        original_attachments = message.attachments
-        if len(original_attachments) > 0:
-            attachment = original_attachments[0]
-            if attachment.content_type in ALLOWED_MIMES:
-                embed.add_field(name='Image', value=f'[Download]({attachment.url})', inline=False)
-                embed.set_image(url=attachment.url)
-            else:
-                embed.add_field(name='File', value=f'[View file]({attachment.url})', inline=False)
-
-        content = message.clean_content
-        if not len(content) <= 0:
-            embed.add_field(name='Message', value=content)
-
-        button_label: str = 'Jump to original message'
-
-        has_reply_content = True if message.reference is not None else False
-        if has_reply_content:
-            resolved = message.reference.resolved
-            who = resolved.author
-            content = resolved.clean_content
-
-            if resolved is not None:
-                if len(content) > MAX_FIELD_LEN:
-                    content = content[0:MAX_FIELD_LEN]
-                    content += f'[...]({resolved.jump_url})'
-
-                embed.add_field(name='Replying to...', value=f'**{who.name}**', inline=False)
-                if resolved.embeds == [] and len(resolved.attachments) == 0:
-                    embed.add_field(name='Source', value=f'> {content}', inline=False)
-                button_label = 'Jump to starred message'
+        self.parse_metadata(message, embed)
 
         button = discord.ui.Button(
             style=discord.ButtonStyle.green,
-            label=button_label,
+            label='Jump to message',
             url=message.jump_url,
         )
 
